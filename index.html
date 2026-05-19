@@ -1,0 +1,3978 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VistaOS Desktop</title>
+    <style>
+        /* --- CORE SYSTEM STYLES --- */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-drag: none;
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body, html {
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            position: relative;
+            background: #000;
+        }
+
+        #os-root {
+            width: 100vw;
+            height: 100vh;
+            transform-origin: top left;
+            transform: scale(1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        #os-root::before {
+            content: '';
+            position: fixed;
+            top: -20%;
+            left: -10%;
+            width: 130%;
+            height: 80%;
+            background: radial-gradient(ellipse at 50% 0%, rgba(255, 255, 255, 0.12) 0%, transparent 60%);
+            transform: rotate(-12deg);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        body.wallpaper-aura #os-root {
+            background: #0b1d3a;
+            background-image:
+                radial-gradient(circle at 80% 0%, rgba(14, 165, 233, 0.45) 0%, transparent 50%),
+                radial-gradient(circle at 20% 90%, rgba(34, 197, 94, 0.3) 0%, transparent 45%),
+                radial-gradient(circle at 0% 30%, rgba(234, 179, 8, 0.25) 0%, transparent 40%),
+                radial-gradient(circle at 100% 70%, rgba(239, 68, 68, 0.2) 0%, transparent 45%),
+                linear-gradient(135deg, #070f1e 0%, #0d264d 100%);
+        }
+
+        body.wallpaper-midnight #os-root {
+            background: #020617;
+            background-image:
+                radial-gradient(circle at 50% 20%, rgba(99, 102, 241, 0.25) 0%, transparent 45%),
+                linear-gradient(180deg, #020617 0%, #0f172a 100%);
+        }
+
+        body.wallpaper-sunset #os-root {
+            background: #1a0a2e;
+            background-image:
+                radial-gradient(circle at 70% 10%, rgba(251, 146, 60, 0.45) 0%, transparent 40%),
+                radial-gradient(circle at 20% 80%, rgba(236, 72, 153, 0.35) 0%, transparent 45%),
+                linear-gradient(135deg, #2e1065 0%, #7c2d12 100%);
+        }
+
+        body.wallpaper-forest #os-root {
+            background: #052e16;
+            background-image:
+                radial-gradient(circle at 30% 20%, rgba(74, 222, 128, 0.3) 0%, transparent 40%),
+                radial-gradient(circle at 80% 70%, rgba(21, 128, 61, 0.35) 0%, transparent 45%),
+                linear-gradient(135deg, #052e16 0%, #14532d 100%);
+        }
+
+        #night-light-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(255, 180, 100, 0.18);
+            pointer-events: none;
+            z-index: 9999998;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        body.night-light #night-light-overlay { opacity: 1; }
+        body.reduce-motion *, body.reduce-motion *::before, body.reduce-motion *::after {
+            transition: none !important;
+            animation: none !important;
+        }
+        body.high-contrast .window { border-color: rgba(255, 255, 255, 0.55) !important; }
+        body.high-contrast .desktop-icon span { text-shadow: 0 0 4px #000; }
+        body.hide-desktop-icons .desktop-icon { display: none !important; }
+
+        #desktop {
+            width: 100%;
+            height: calc(100vh - 55px);
+            position: relative;
+            z-index: 1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            align-content: flex-start;
+            flex-wrap: wrap;
+        }
+
+        /* --- WINDOWS LOGO TILT --- */
+        .start-logo {
+            width: 22px;
+            height: 20px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            gap: 2px;
+            transform: perspective(100px) rotateY(-36deg) rotateX(4deg) skewY(-2deg);
+            transform-origin: left center;
+            transition: transform 0.2s ease, filter 0.2s ease;
+        }
+
+        .start-logo span {
+            background-color: #ef4444;
+            border-radius: 0.5px;
+        }
+
+        /* --- DESKTOP ICONS --- */
+        .desktop-icon {
+            width: 85px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            padding: 8px 4px;
+            border-radius: 4px;
+            border: 1px solid transparent;
+            transition: background 0.15s, border 0.15s;
+        }
+
+        .desktop-icon:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+
+        .desktop-icon svg {
+            width: 36px;
+            height: 36px;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+        }
+
+        .desktop-icon span {
+            color: #fff;
+            font-size: 11px;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.9), 0 1px 1px rgba(0,0,0,0.5);
+            text-align: center;
+            word-break: break-word;
+            font-weight: 500;
+        }
+
+        .desktop-icon.game-icon svg {
+            border-radius: 10px;
+        }
+
+        .app-icon-wrapper.game-icon svg {
+            border-radius: 6px;
+        }
+
+        /* --- SYSTEM WINDOW FRAMEWORK --- */
+        .window {
+            position: absolute;
+            background: rgba(10, 20, 38, 0.85);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-radius: 8px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.6);
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            opacity: 0;
+            visibility: hidden;
+            transform: scale(0.95);
+            transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s, top 0.15s ease, left 0.15s ease, width 0.15s ease, height 0.15s ease;
+        }
+
+        /* Explicit display parameters when windows are active */
+        .window.open {
+            opacity: 1 !important;
+            visibility: visible !important;
+            transform: scale(1) !important;
+            display: flex !important;
+        }
+
+        /* Maximized State Styles */
+        .window.maximized {
+            top: 0 !important;
+            left: 0 !important;
+            width: 100% !important;
+            height: calc(100vh - 55px) !important;
+            border-radius: 0px !important;
+            transform: scale(1) !important;
+        }
+
+        .window-header {
+            height: 40px;
+            padding: 0 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(255, 255, 255, 0.06);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            cursor: move;
+        }
+
+        .window.maximized .window-header {
+            cursor: default;
+        }
+
+        .window-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #fff;
+            font-size: 12px;
+            font-weight: 500;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+        }
+
+        .window-title svg { width: 16px; height: 16px; }
+
+        /* --- VISIBLE MAC TRAFFIC LIGHT CONTROLS --- */
+        .window-controls { 
+            display: flex !important; 
+            gap: 8px !important; 
+            align-items: center !important;
+            min-width: 65px;
+            pointer-events: auto;
+            position: relative;
+            z-index: 5;
+        }
+
+        .mac-btn {
+            width: 13px !important;
+            height: 13px !important;
+            border-radius: 50% !important;
+            cursor: pointer !important;
+            position: relative;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            border: 1px solid rgba(0, 0, 0, 0.2) !important;
+            transition: filter 0.1s ease;
+        }
+
+        /* Vibrant Authentic Apple Colors */
+        .mac-btn.close { background-color: #ff5f56 !important; border-color: #e0443e !important; }
+        .mac-btn.minimize { background-color: #ffbd2e !important; border-color: #dea123 !important; }
+        .mac-btn.maximize { background-color: #27c93f !important; border-color: #1aaa2c !important; }
+
+        .mac-btn:hover {
+            filter: brightness(0.85);
+        }
+
+        .mac-btn {
+            pointer-events: auto;
+        }
+
+        /* Internal Symbols are hidden by default, appearing only on hover */
+        .mac-btn svg {
+            width: 7px !important;
+            height: 7px !important;
+            opacity: 0;
+            transition: opacity 0.1s ease;
+            pointer-events: none;
+            display: block !important;
+        }
+
+        /* Show details inside circles on control frame group hover */
+        .window-controls:hover .mac-btn svg {
+            opacity: 0.75;
+        }
+
+        /* --- FILE EXPLORER WINDOW SPECIFICS --- */
+        #file-explorer {
+            top: 12%;
+            left: 22%;
+            width: 780px;
+            height: 500px;
+        }
+
+        .window-action-bar {
+            height: 34px;
+            padding: 0 12px;
+            display: flex;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.15);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .action-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 4px;
+            color: #f3f4f6;
+            font-size: 11px;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .action-btn:hover { background: rgba(255, 255, 255, 0.08); }
+        .action-btn svg { width: 14px; height: 14px; }
+
+        .window-nav-bar {
+            height: 38px;
+            padding: 0 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(0, 0, 0, 0.2);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .address-box {
+            flex-grow: 1;
+            height: 26px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+            color: #d1d5db;
+            font-size: 11px;
+        }
+
+        .window-body {
+            flex-grow: 1;
+            display: flex;
+            overflow: hidden;
+        }
+
+        .sidebar-nav {
+            width: 190px;
+            background: rgba(0, 0, 0, 0.15);
+            border-right: 1px solid rgba(255, 255, 255, 0.06);
+            padding: 12px 6px;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            overflow-y: auto;
+        }
+
+        .sidebar-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 10px;
+            border-radius: 4px;
+            color: #e5e7eb;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        .sidebar-item:hover, .sidebar-item.active {
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        .sidebar-item svg { width: 16px; height: 16px; flex-shrink: 0; }
+        .sidebar-sep { height: 1px; background: rgba(255, 255, 255, 0.05); margin: 6px 4px; }
+
+        .explorer-content {
+            flex-grow: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: rgba(5, 10, 20, 0.2);
+        }
+
+        /* Drives Partition Visuals */
+        .drive-card {
+            width: 240px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 6px;
+            padding: 12px;
+            display: flex;
+            gap: 12px;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .drive-card:hover { background: rgba(255, 255, 255, 0.06); }
+        .drive-card svg { width: 32px; height: 32px; }
+        .drive-info { flex-grow: 1; display: flex; flex-direction: column; gap: 4px; }
+        .drive-name { color: #fff; font-size: 12px; font-weight: 500; }
+        
+        .drive-progress-bg { width: 100%; height: 6px; background: rgba(255, 255, 255, 0.1); border-radius: 3px; overflow: hidden; }
+        .drive-progress-fill { width: 32%; height: 100%; background: #ef4444; }
+        .drive-space-text { color: #9ca3af; font-size: 11px; }
+
+        /* Files Architecture Viewport Grid */
+        .files-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(95px, 1fr));
+            gap: 16px;
+        }
+
+        .file-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            padding: 10px 4px;
+            border-radius: 4px;
+            cursor: pointer;
+            text-align: center;
+            border: 1px solid transparent;
+        }
+
+        .file-item:hover { 
+            background: rgba(255, 255, 255, 0.04); 
+            border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+        .file-item svg { width: 32px; height: 32px; }
+        .file-item span { color: #e5e7eb; font-size: 11px; width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+        .empty-directory-message {
+            color: #9ca3af;
+            font-size: 12px;
+            text-align: center;
+            margin-top: 40px;
+        }
+
+        /* --- TERMINAL WINDOW SPECIFICS --- */
+        #system-terminal {
+            top: 16%;
+            left: 26%;
+            width: 660px;
+            height: 420px;
+            background: rgba(4, 6, 12, 0.95);
+            border: 1px solid rgba(52, 211, 153, 0.25);
+        }
+
+        .terminal-viewport {
+            flex-grow: 1;
+            padding: 16px;
+            font-family: 'Consolas', 'Courier New', monospace;
+            color: #34d399;
+            font-size: 13px;
+            overflow-y: auto;
+            cursor: text;
+            user-select: text;
+        }
+
+        .terminal-log-row {
+            margin-bottom: 6px;
+            line-height: 1.4;
+            white-space: pre-wrap;
+        }
+
+        .terminal-input-line {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .terminal-prompt {
+            color: #38bdf8;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+
+        .terminal-hidden-input {
+            background: none;
+            border: none;
+            outline: none;
+            color: #34d399;
+            font-family: 'Consolas', monospace;
+            font-size: 13px;
+            flex-grow: 1;
+            width: 100%;
+            user-select: text;
+        }
+
+        /* --- TASKBAR LAYOUT --- */
+        #taskbar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100vw;
+            height: 55px;
+            background: rgba(8, 14, 26, 0.65);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border-top: 1px solid rgba(255, 255, 255, 0.12);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 15px;
+            z-index: 9999;
+        }
+
+        .taskbar-left { width: 150px; }
+        .taskbar-right { display: flex; align-items: center; gap: 15px; min-width: 280px; justify-content: flex-end; }
+        .taskbar-center { display: flex; align-items: center; gap: 6px; position: absolute; left: 50%; transform: translateX(-50%); }
+
+        .tb-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background 0.2s ease, transform 0.1s ease;
+            position: relative;
+        }
+
+        .tb-icon:hover { background: rgba(255, 255, 255, 0.1); }
+        .tb-icon:active { transform: scale(0.9); }
+        
+        .tb-icon::after {
+            content: ''; position: absolute; bottom: 2px; width: 4px; height: 4px; border-radius: 50%; background: #ef4444; opacity: 0; transition: opacity 0.2s ease;
+        }
+        .tb-icon.active::after { opacity: 1; }
+
+        .tb-icon.minimized::after {
+            opacity: 1;
+            background: #facc15;
+            width: 8px;
+            height: 3px;
+            border-radius: 2px;
+            bottom: 4px;
+        }
+
+        .tb-icon.start-btn:hover .start-logo {
+            filter: drop-shadow(0 0 6px rgba(239, 68, 68, 0.65));
+            transform: perspective(100px) rotateY(-36deg) rotateX(4deg) skewY(-2deg) scale(1.05);
+        }
+
+        .taskbar-search {
+            width: 150px; height: 40px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 20px; display: flex; align-items: center; padding: 0 12px; gap: 8px; cursor: text;
+        }
+        .taskbar-search input { background: none; border: none; outline: none; color: #fff; font-size: 13px; width: 100%; user-select: text; }
+        .taskbar-search input::placeholder { color: rgba(255, 255, 255, 0.5); }
+
+        .tb-icon svg, .taskbar-search svg { width: 20px; height: 20px; }
+
+        /* HARDWARE TRAY STYLING */
+        #vista-wifi-hardware {
+            display: flex;
+            align-items: center;
+            color: #e5e7eb;
+            transition: opacity 0.3s ease, filter 0.3s ease;
+        }
+        #vista-wifi-hardware svg { width: 18px; height: 18px; fill: currentColor; }
+
+        .tray-volume-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 4px 10px;
+            border-radius: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .tray-volume-container svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; }
+        .volume-range-slider { width: 75px; accent-color: #38bdf8; cursor: pointer; height: 4px; }
+
+        #system-tray { padding: 2px 8px; border-radius: 4px; display: flex; flex-direction: column; align-items: center; cursor: pointer; color: #e5e7eb; }
+        #system-tray:hover { background: rgba(255, 255, 255, 0.08); }
+        #clock { font-size: 12px; font-weight: 500; }
+        #date { font-size: 11px; color: #9ca3af; margin-top: 2px; }
+
+        /* --- POPUPS & START PANELS --- */
+        #start-menu, #search-panel {
+            position: absolute; bottom: 65px; left: 50%; transform: translateX(-50%) scale(0.92); width: 520px; background: rgba(10, 18, 32, 0.85); backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 12px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7); z-index: 9998; display: flex; flex-direction: column; opacity: 0; visibility: hidden; transition: opacity 0.2s, transform 0.2s, visibility 0.2s;
+        }
+        #start-menu { height: 680px; }
+        #search-panel { height: 450px; padding: 25px; z-index: 9997; }
+        #start-menu.open, #search-panel.open { opacity: 1; visibility: visible; transform: translateX(-50%) scale(1); }
+
+        .search-results-container { flex-grow: 1; overflow-y: auto; margin-top: 15px; display: flex; flex-direction: column; gap: 8px; }
+        .search-result-item { display: flex; align-items: center; gap: 15px; padding: 10px 15px; border-radius: 8px; cursor: pointer; background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.04); transition: background 0.15s ease; }
+        .search-result-item:hover { background: rgba(255, 255, 255, 0.08); }
+        .search-result-title { font-size: 13px; color: #f3f4f6; font-weight: 500; }
+        .no-results-msg { font-size: 12px; color: #9ca3af; text-align: center; margin-top: 20px; }
+
+        .menu-body { padding: 35px; flex-grow: 1; overflow-y: auto; }
+        .section-title { font-size: 13px; font-weight: 600; color: #f3f4f6; margin-bottom: 16px; }
+        .apps-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 16px 8px; }
+        .app-item { display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; padding: 10px 4px; border-radius: 6px; transition: background 0.15s; }
+        .app-item:hover { background: rgba(255, 255, 255, 0.06); }
+        .app-icon-wrapper { width: 32px; height: 32px; margin-bottom: 8px; display: flex; align-items: center; justify-content: center; }
+        .app-text { font-size: 11px; color: #e5e7eb; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; }
+
+        .menu-footer { height: 64px; background: rgba(0, 0, 0, 0.25); border-top: 1px solid rgba(255, 255, 255, 0.05); border-radius: 0 0 11px 11px; display: flex; align-items: center; justify-content: space-between; padding: 0 35px; }
+        .profile-section { display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 4px 8px; border-radius: 4px; }
+        .profile-section:hover { background: rgba(255, 255, 255, 0.05); }
+        .avatar { width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, #ef4444, #991b1b); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; color: #fff; }
+        .username { font-size: 12px; font-weight: 500; color: #f3f4f6; }
+        .power-btn { width: 32px; height: 32px; border-radius: 4px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background 0.2s; }
+        .power-btn:hover { background: rgba(255, 255, 255, 0.08); }
+
+        /* RIGHT CLICK MENU */
+        #context-menu{
+            position:absolute;
+            width:220px;
+            background:rgba(20,25,40,0.85);
+            backdrop-filter:blur(20px);
+            border:1px solid rgba(255,255,255,0.08);
+            border-radius:12px;
+            padding:6px;
+            display:none;
+            z-index:999999;
+        }
+
+        .context-item{
+            padding:10px 14px;
+            color:white;
+            border-radius:8px;
+            cursor:pointer;
+            font-size:13px;
+        }
+
+        .context-item:hover{
+            background:rgba(255,255,255,0.08);
+        }
+
+        .context-separator{
+            height:1px;
+            background:rgba(255,255,255,0.08);
+            margin:6px 0;
+        }
+
+        #desktop-selection-box{
+            position:absolute;
+            border:1px solid rgba(140,190,255,0.95);
+            background:
+                linear-gradient(
+                    135deg,
+                    rgba(120,170,255,0.18),
+                    rgba(70,120,255,0.28)
+                );
+            box-shadow:
+                0 0 0 1px rgba(255,255,255,0.08) inset,
+                0 0 12px rgba(80,140,255,0.25);
+            backdrop-filter:blur(3px);
+            -webkit-backdrop-filter:blur(3px);
+            pointer-events:none;
+            display:none;
+            z-index:9999999;
+        }
+
+        /* --- SETTINGS WINDOW (WIN11 STYLE) --- */
+        #system-settings {
+            top: 6%;
+            left: 18%;
+            width: 920px;
+            height: 620px;
+            background: rgba(12, 18, 32, 0.92);
+        }
+
+        .settings-body { flex-grow: 1; display: flex; overflow: hidden; }
+
+        .settings-sidebar {
+            width: 220px;
+            background: rgba(0, 0, 0, 0.18);
+            border-right: 1px solid rgba(255, 255, 255, 0.06);
+            padding: 12px 8px;
+            overflow-y: auto;
+        }
+
+        .settings-nav-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            border-radius: 6px;
+            color: #e5e7eb;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        .settings-nav-item:hover { background: rgba(255, 255, 255, 0.06); }
+        .settings-nav-item.active { background: rgba(56, 189, 248, 0.15); color: #fff; }
+        .settings-nav-item svg { width: 16px; height: 16px; flex-shrink: 0; }
+
+        .settings-content {
+            flex-grow: 1;
+            padding: 28px 32px;
+            overflow-y: auto;
+            color: #f3f4f6;
+        }
+
+        .settings-page { display: none; }
+        .settings-page.active { display: block; }
+        .settings-page h2 { font-size: 26px; font-weight: 600; margin-bottom: 6px; }
+        .settings-page .settings-subtitle { color: #9ca3af; font-size: 13px; margin-bottom: 24px; }
+
+        .settings-group {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 8px;
+            margin-bottom: 16px;
+            overflow: hidden;
+        }
+
+        .settings-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            padding: 16px 18px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .settings-row:last-child { border-bottom: none; }
+        .settings-row-title { font-size: 13px; font-weight: 500; margin-bottom: 3px; }
+        .settings-row-desc { font-size: 11px; color: #9ca3af; line-height: 1.4; }
+
+        .settings-control select,
+        .settings-control input[type="range"] { user-select: auto; }
+
+        .settings-control select {
+            background: rgba(0, 0, 0, 0.35);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            color: #f3f4f6;
+            padding: 7px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            outline: none;
+            min-width: 180px;
+        }
+
+        .settings-control input[type="range"] { width: 160px; accent-color: #38bdf8; }
+
+        .settings-toggle {
+            width: 40px;
+            height: 22px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            position: relative;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        .settings-toggle.on { background: #38bdf8; }
+
+        .settings-toggle::after {
+            content: '';
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 16px;
+            height: 16px;
+            background: #fff;
+            border-radius: 50%;
+            transition: transform 0.2s;
+        }
+
+        .settings-toggle.on::after { transform: translateX(18px); }
+
+        .wallpaper-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            padding: 16px 18px;
+        }
+
+        .wallpaper-option {
+            aspect-ratio: 16/10;
+            border-radius: 8px;
+            border: 2px solid transparent;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .wallpaper-option.selected { border-color: #38bdf8; }
+
+        .wallpaper-option span {
+            position: absolute;
+            bottom: 6px;
+            left: 8px;
+            font-size: 10px;
+            color: #fff;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+        }
+
+        .wp-aura { background: linear-gradient(135deg, #070f1e, #0ea5e9); }
+        .wp-midnight { background: linear-gradient(135deg, #020617, #6366f1); }
+        .wp-sunset { background: linear-gradient(135deg, #2e1065, #fb923c); }
+        .wp-forest { background: linear-gradient(135deg, #052e16, #4ade80); }
+
+        .settings-value-label { font-size: 12px; color: #38bdf8; min-width: 48px; text-align: right; }
+
+        .settings-home-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+
+        .settings-home-card {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 8px;
+            padding: 16px;
+            cursor: pointer;
+        }
+
+        .settings-home-card:hover { background: rgba(255, 255, 255, 0.08); }
+        .settings-home-card h3 { font-size: 14px; margin-bottom: 4px; }
+        .settings-home-card p { font-size: 11px; color: #9ca3af; }
+
+        /* --- VISTACORD (DISCORD-LIKE) --- */
+        #vistacord-window {
+            top: 8%;
+            left: 14%;
+            width: 960px;
+            height: 620px;
+            min-height: 620px;
+            max-height: 620px;
+            background: #313338;
+            border-color: rgba(0, 0, 0, 0.4);
+            padding: 0;
+            overflow: hidden;
+            display: flex !important;
+            flex-direction: column !important;
+        }
+
+        #vistacord-window.maximized {
+            min-height: calc(100vh - 55px) !important;
+            max-height: calc(100vh - 55px) !important;
+        }
+
+        #vistacord-window > .vc-modal-overlay,
+        #vistacord-window > .vc-toast {
+            position: absolute;
+            flex: none;
+        }
+
+        #vistacord-window .window-header {
+            display: none;
+        }
+
+        .vc-shell {
+            display: flex;
+            flex: 1 1 auto;
+            min-height: 0;
+            width: 100%;
+            overflow: hidden;
+            color: #dbdee1;
+            font-size: 14px;
+        }
+
+        .vc-rail {
+            width: 72px;
+            background: #1e1f22;
+            padding: 12px 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        .vc-rail-btn {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: #313338;
+            border: none;
+            color: #23a559;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: border-radius 0.15s, background 0.15s;
+        }
+
+        .vc-rail-btn:hover, .vc-rail-btn.active {
+            border-radius: 16px;
+            background: #5865f2;
+            color: #fff;
+        }
+
+        .vc-rail-btn svg { width: 26px; height: 26px; }
+
+        .vc-rail-sep {
+            width: 32px;
+            height: 2px;
+            background: #35363c;
+            margin: 4px 0;
+        }
+
+        .vc-sidebar {
+            width: 240px;
+            background: #2b2d31;
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+
+        .vc-sidebar-head {
+            height: 48px;
+            padding: 0 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-weight: 600;
+            font-size: 15px;
+            border-bottom: 1px solid #1f2023;
+            box-shadow: 0 1px 0 rgba(0,0,0,0.2);
+        }
+
+        .vc-sidebar-actions {
+            display: flex;
+            gap: 4px;
+        }
+
+        .vc-icon-btn {
+            width: 24px;
+            height: 24px;
+            border: none;
+            background: transparent;
+            color: #b5bac1;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 18px;
+            line-height: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .vc-icon-btn:hover { color: #fff; background: rgba(255,255,255,0.08); }
+
+        .vc-channel-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px;
+        }
+
+        .vc-section-label {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: #949ba4;
+            padding: 8px 8px 4px;
+            letter-spacing: 0.02em;
+        }
+
+        .vc-channel-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            width: 100%;
+            padding: 8px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            color: #949ba4;
+            font-size: 15px;
+        }
+
+        .vc-channel-item:hover { background: #35373c; color: #dbdee1; }
+        .vc-channel-item.active { background: #404249; color: #fff; }
+
+        .vc-channel-item .vc-hash { opacity: 0.7; font-weight: 600; }
+        .vc-unread { margin-left: auto; width: 8px; height: 8px; background: #f23f43; border-radius: 50%; flex-shrink: 0; }
+
+        .vc-online-pip {
+            width: 8px;
+            height: 8px;
+            background: #23a559;
+            border-radius: 50%;
+            flex-shrink: 0;
+            margin-left: 6px;
+        }
+
+        .vc-member-status {
+            font-size: 11px;
+            color: #949ba4;
+            margin-left: auto;
+        }
+
+        .vc-member-item.online .vc-member-status { color: #23a559; }
+
+        .vc-user-bar {
+            height: 52px;
+            background: #232428;
+            padding: 0 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .vc-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-weight: 700;
+            color: #fff;
+            flex-shrink: 0;
+        }
+
+        .vc-user-meta { flex: 1; min-width: 0; }
+        .vc-user-name { font-size: 13px; font-weight: 600; color: #f2f3f5; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .vc-user-tag { font-size: 11px; color: #949ba4; }
+
+        .vc-main {
+            flex: 1 1 auto;
+            display: flex;
+            flex-direction: column;
+            background: #313338;
+            min-width: 0;
+            min-height: 0;
+            overflow: hidden;
+        }
+
+        .vc-chat-head {
+            height: 48px;
+            flex-shrink: 0;
+            padding: 0 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-bottom: 1px solid #26272b;
+            font-weight: 600;
+            color: #f2f3f5;
+            box-shadow: 0 1px 0 rgba(0,0,0,0.15);
+        }
+
+        .vc-messages {
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 16px;
+            display: block;
+        }
+
+        #vc-message-list {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .vc-msg {
+            display: flex;
+            gap: 16px;
+            padding: 4px 0;
+            margin-top: 8px;
+        }
+
+        .vc-msg:first-child { margin-top: 0; }
+
+        .vc-msg-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 14px;
+            color: #fff;
+        }
+
+        .vc-msg-body { min-width: 0; }
+        .vc-msg-head { display: flex; align-items: baseline; gap: 8px; margin-bottom: 2px; }
+        .vc-msg-author { font-weight: 600; color: #f2f3f5; font-size: 15px; }
+        .vc-msg-time { font-size: 11px; color: #949ba4; }
+        .vc-msg-text { color: #dbdee1; line-height: 1.4; word-break: break-word; user-select: text; }
+
+        .vc-welcome {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 40px;
+            color: #949ba4;
+            min-height: 280px;
+            box-sizing: border-box;
+        }
+
+        .vc-welcome h2 { color: #f2f3f5; font-size: 24px; margin-bottom: 8px; }
+        .vc-welcome p { max-width: 400px; line-height: 1.5; font-size: 14px; }
+
+        .vc-input-wrap {
+            flex-shrink: 0;
+            padding: 0 16px 16px;
+        }
+
+        .vc-input-box {
+            background: #383a40;
+            border-radius: 8px;
+            padding: 0 16px;
+            display: flex;
+            align-items: center;
+            min-height: 44px;
+        }
+
+        .vc-input-box input {
+            flex: 1;
+            width: 100%;
+            background: none;
+            border: none;
+            outline: none;
+            color: #dbdee1;
+            font-size: 16px;
+            padding: 11px 0;
+            user-select: text;
+            -webkit-user-select: text;
+        }
+
+        .vc-input-box input::placeholder { color: #6d6f78; }
+
+        .vc-members {
+            width: 240px;
+            background: #2b2d31;
+            padding: 16px 8px;
+            overflow-y: auto;
+            flex-shrink: 0;
+            display: none;
+        }
+
+        .vc-members.visible { display: block; }
+
+        .vc-member-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 6px 8px;
+            border-radius: 4px;
+            cursor: default;
+        }
+
+        .vc-member-item:hover { background: #35373c; }
+
+        .vc-member-name { font-size: 14px; color: #949ba4; }
+        .vc-member-item.online .vc-member-name { color: #dbdee1; }
+
+        .vc-status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #80848e;
+            margin-left: auto;
+        }
+
+        .vc-member-item.online .vc-status-dot { background: #23a559; }
+
+        .vc-titlebar {
+            height: 32px;
+            background: #1e1f22;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 8px 0 12px;
+            flex-shrink: 0;
+        }
+
+        .vc-titlebar span {
+            font-size: 12px;
+            font-weight: 600;
+            color: #f2f3f5;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .vc-titlebar .window-controls { min-width: auto; gap: 6px; }
+
+        .vc-modal-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0,0,0,0.65);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+            pointer-events: auto;
+        }
+
+        .vc-modal-overlay.open { display: flex; pointer-events: auto; }
+
+        .vc-modal {
+            background: #313338;
+            border-radius: 8px;
+            padding: 24px;
+            width: 440px;
+            max-width: 90%;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+        }
+
+        .vc-modal h3 { color: #f2f3f5; font-size: 20px; margin-bottom: 8px; }
+        .vc-modal p { color: #b5bac1; font-size: 13px; margin-bottom: 16px; line-height: 1.4; }
+
+        .vc-field { margin-bottom: 14px; }
+        .vc-field label { display: block; font-size: 12px; font-weight: 700; text-transform: uppercase; color: #b5bac1; margin-bottom: 6px; }
+
+        .vc-field input, .vc-field select {
+            width: 100%;
+            padding: 10px;
+            background: #1e1f22;
+            border: none;
+            border-radius: 4px;
+            color: #f2f3f5;
+            font-size: 14px;
+            outline: none;
+            user-select: text;
+        }
+
+        .vc-friend-pick {
+            max-height: 160px;
+            overflow-y: auto;
+            background: #1e1f22;
+            border-radius: 4px;
+            padding: 4px;
+        }
+
+        .vc-friend-pick label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            color: #dbdee1;
+            text-transform: none;
+            font-weight: 400;
+        }
+
+        .vc-friend-pick label:hover { background: #2b2d31; }
+
+        .vc-modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            margin-top: 20px;
+        }
+
+        .vc-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .vc-btn-primary { background: #5865f2; color: #fff; }
+        .vc-btn-primary:hover { background: #4752c4; }
+        .vc-btn-ghost { background: transparent; color: #fff; }
+        .vc-btn-ghost:hover { text-decoration: underline; }
+
+        .vc-toast {
+            position: absolute;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #111214;
+            color: #f2f3f5;
+            padding: 10px 16px;
+            border-radius: 4px;
+            font-size: 13px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s;
+            z-index: 60;
+        }
+
+        .vc-toast.show { opacity: 1; }
+
+        .vc-live-badge {
+            font-size: 10px;
+            background: #23a559;
+            color: #fff;
+            padding: 2px 6px;
+            border-radius: 10px;
+            margin-left: 8px;
+            font-weight: 600;
+        }
+
+        /* --- VISTAX CUSTOM CURSOR --- */
+        body.vx-custom-cursor,
+        body.vx-custom-cursor * {
+            cursor: none !important;
+        }
+
+        #vistax-cursor {
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 2147483647;
+            pointer-events: none;
+            user-select: none;
+            opacity: 0;
+            visibility: hidden;
+            will-change: transform;
+            filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.45));
+            transition: opacity 0.12s ease;
+        }
+
+        #vistax-cursor.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        body.reduce-motion #vistax-cursor {
+            transition: none;
+        }
+
+        #vistax-cursor .vx-cur {
+            display: none;
+            width: 32px;
+            height: 32px;
+            transform-origin: top left;
+            transition: transform 0.1s ease;
+        }
+
+        body:not(.reduce-motion) #vistax-cursor.pressing .vx-cur {
+            transform: scale(0.9);
+        }
+
+        #vistax-cursor.mode-default .vx-cur-default { display: block; width: 26px; height: 30px; }
+        #vistax-cursor.mode-pointer .vx-cur-pointer { display: block; }
+        #vistax-cursor.mode-grabbing .vx-cur-grabbing { display: block; }
+        #vistax-cursor.mode-text .vx-cur-text { display: block; width: 14px; height: 24px; }
+        #vistax-cursor.mode-move .vx-cur-move { display: block; }
+        #vistax-cursor.mode-crosshair .vx-cur-crosshair { display: block; }
+        #vistax-cursor.mode-notallowed .vx-cur-notallowed { display: block; }
+        #vistax-cursor.mode-resize-h .vx-cur-resize-h { display: block; }
+
+    </style>
+</head>
+<body class="wallpaper-aura">
+
+    <div id="night-light-overlay"></div>
+
+    <div id="vistax-cursor" class="mode-default" aria-hidden="true">
+        <svg class="vx-cur vx-cur-default" viewBox="0 0 26 30" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M3 2.5v22.5l6.2-4.8 3.4 8.6 3.6-1.4-3.5-8.4h7.3L3 2.5z" fill="url(#vxCurFill)" stroke="rgba(255,255,255,0.95)" stroke-width="1.35" stroke-linejoin="round"/>
+            <path d="M5 6.5l8.5 6.2" stroke="rgba(186,230,253,0.55)" stroke-width="1.2" stroke-linecap="round"/>
+            <defs>
+                <linearGradient id="vxCurFill" x1="3" y1="2" x2="20" y2="26" gradientUnits="userSpaceOnUse">
+                    <stop stop-color="#f0f9ff"/>
+                    <stop offset="0.45" stop-color="#7dd3fc"/>
+                    <stop offset="1" stop-color="#0284c7"/>
+                </linearGradient>
+            </defs>
+        </svg>
+        <svg class="vx-cur vx-cur-pointer" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="11" cy="9" r="7.5" fill="url(#vxPtrHand)" stroke="rgba(255,255,255,0.9)" stroke-width="1.2"/>
+            <path d="M11 15.5v9.5c0 1.2 1 2.2 2.2 2.2h1.1c1 0 1.8-.8 1.8-1.8v-5.2h2.2c1 0 1.8-.8 1.8-1.8v-1.1c0-1-.8-1.8-1.8-1.8h-2.2V12c0-1-.8-1.8-1.8-1.8h-1.1c-1.2 0-2.2 1-2.2 2.2v3.3" stroke="rgba(255,255,255,0.95)" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round" fill="url(#vxPtrHand)"/>
+            <defs>
+                <linearGradient id="vxPtrHand" x1="6" y1="4" x2="22" y2="26" gradientUnits="userSpaceOnUse">
+                    <stop stop-color="#e0f2fe"/>
+                    <stop offset="1" stop-color="#38bdf8"/>
+                </linearGradient>
+            </defs>
+        </svg>
+        <svg class="vx-cur vx-cur-grabbing" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="14" cy="14" r="10" fill="rgba(14,165,233,0.25)" stroke="#7dd3fc" stroke-width="1.5"/>
+            <path d="M10 14.5c0-2.2 1.8-4 4-4 .9 0 1.7.3 2.4.8M18 14.5c0-2.2-1.8-4-4-4" stroke="#f0f9ff" stroke-width="1.6" stroke-linecap="round"/>
+            <path d="M11 17.5h6M11 20h6" stroke="#bae6fd" stroke-width="1.4" stroke-linecap="round"/>
+        </svg>
+        <svg class="vx-cur vx-cur-text" viewBox="0 0 14 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="5" y="2" width="4" height="20" rx="1" fill="#e0f2fe" stroke="#fff" stroke-width="1.2"/>
+            <line x1="7" y1="2" x2="7" y2="22" stroke="#38bdf8" stroke-width="1"/>
+        </svg>
+        <svg class="vx-cur vx-cur-move" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="16" cy="16" r="11" fill="rgba(15,23,42,0.55)" stroke="rgba(186,230,253,0.85)" stroke-width="1.3"/>
+            <path d="M16 6v5M16 21v5M6 16h5M21 16h5" stroke="#7dd3fc" stroke-width="1.8" stroke-linecap="round"/>
+            <path d="M16 6l-2.5 2.5M16 6l2.5 2.5M16 26l-2.5-2.5M16 26l2.5-2.5M6 16l2.5-2.5M6 16l2.5 2.5M26 16l-2.5-2.5M26 16l-2.5 2.5" stroke="#f0f9ff" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="16" cy="16" r="2.5" fill="#38bdf8"/>
+        </svg>
+        <svg class="vx-cur vx-cur-crosshair" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="16" cy="16" r="10" stroke="rgba(125,211,252,0.35)" stroke-width="1"/>
+            <path d="M16 4v8M16 20v8M4 16h8M20 16h8" stroke="#7dd3fc" stroke-width="1.5" stroke-linecap="round"/>
+            <circle cx="16" cy="16" r="2" fill="#38bdf8" stroke="#fff" stroke-width="1"/>
+        </svg>
+        <svg class="vx-cur vx-cur-notallowed" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="16" cy="16" r="11" fill="rgba(30,41,59,0.7)" stroke="#f87171" stroke-width="1.5"/>
+            <path d="M10 10l12 12" stroke="#fca5a5" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        <svg class="vx-cur vx-cur-resize-h" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M8 16h16M11 12l-3 4 3 4M21 12l3 4-3 4" stroke="#7dd3fc" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="16" cy="16" r="11" stroke="rgba(186,230,253,0.5)" stroke-width="1.2"/>
+        </svg>
+    </div>
+
+    <div id="os-root">
+
+    <div id="desktop">
+        <div class="desktop-icon" id="desktop-pc-icon" onclick="openExplorer()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="1.5">
+                <rect x="2" y="3" width="20" height="14" rx="2"/>
+                <line x1="8" y1="21" x2="16" y2="21"/>
+                <line x1="12" y1="17" x2="12" y2="21"/>
+            </svg>
+            <span>This PC</span>
+        </div>
+
+        <div class="desktop-icon" id="desktop-chrome-icon" onclick="openBrowser()">
+            <!-- Real Google Chrome Logo -->
+            <svg width="36" height="36" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                <!-- Outer white circle -->
+                <circle cx="50" cy="50" r="48" fill="white"/>
+                
+                <!-- Central blue circle -->
+                <circle cx="50" cy="50" r="30" fill="#4285F4"/>
+                
+                <!-- Top red section -->
+                <path d="M 50 20 A 30 30 0 0 1 75.96 25.96 L 62.98 37.98 A 15 15 0 0 0 50 35 Z" fill="#EA4335"/>
+                
+                <!-- Bottom right green section -->
+                <path d="M 75.96 74.04 A 30 30 0 0 1 50 80 L 50 65 A 15 15 0 0 0 62.98 62.02 Z" fill="#34A853"/>
+                
+                <!-- Bottom left yellow section -->
+                <path d="M 50 80 A 30 30 0 0 1 24.04 74.04 L 37.02 62.02 A 15 15 0 0 0 50 65 Z" fill="#FBBC05"/>
+                
+                <!-- Inner white circle -->
+                <circle cx="50" cy="50" r="15" fill="white"/>
+            </svg>
+            <span>Google Chrome</span>
+        </div>
+
+        <div class="desktop-icon game-icon" onclick="openGame('https://agar.io/')">
+            <svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+                <rect width="48" height="48" rx="10" fill="#16213e"/>
+                <circle cx="17" cy="19" r="11" fill="#22c55e" opacity="0.95"/>
+                <circle cx="31" cy="27" r="8" fill="#ef4444" opacity="0.95"/>
+                <circle cx="33" cy="14" r="6" fill="#3b82f6" opacity="0.95"/>
+                <circle cx="14" cy="32" r="5" fill="#eab308" opacity="0.95"/>
+                <circle cx="24" cy="24" r="3" fill="rgba(255,255,255,0.35)"/>
+            </svg>
+            <span>Agar.io</span>
+        </div>
+
+        <div class="desktop-icon game-icon" onclick="openGame('https://veck.io/')">
+            <svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+                <rect width="48" height="48" rx="10" fill="#0f172a"/>
+                <rect x="6" y="6" width="36" height="36" rx="6" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+                <circle cx="24" cy="22" r="11" fill="none" stroke="#22d3ee" stroke-width="2"/>
+                <line x1="24" y1="7" x2="24" y2="13" stroke="#22d3ee" stroke-width="2" stroke-linecap="round"/>
+                <line x1="24" y1="31" x2="24" y2="37" stroke="#22d3ee" stroke-width="2" stroke-linecap="round"/>
+                <line x1="7" y1="22" x2="13" y2="22" stroke="#22d3ee" stroke-width="2" stroke-linecap="round"/>
+                <line x1="35" y1="22" x2="41" y2="22" stroke="#22d3ee" stroke-width="2" stroke-linecap="round"/>
+                <circle cx="24" cy="22" r="2.5" fill="#ef4444"/>
+                <path d="M12 38 L18 34 L28 34 L34 38 L34 41 L12 41 Z" fill="#64748b"/>
+                <rect x="20" y="32" width="8" height="6" rx="1" fill="#475569"/>
+            </svg>
+            <span>Veck.io</span>
+        </div>
+
+        <div class="desktop-icon game-icon" onclick="openGame('https://classic.minecraft.net/')">
+            <svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+                <rect width="48" height="48" rx="10" fill="#87ceeb"/>
+                <rect x="10" y="22" width="28" height="16" fill="#6d4c41"/>
+                <rect x="10" y="10" width="28" height="12" fill="#4ade80"/>
+                <rect x="12" y="12" width="5" height="5" fill="#22c55e"/>
+                <rect x="22" y="11" width="5" height="5" fill="#16a34a"/>
+                <rect x="32" y="13" width="4" height="4" fill="#22c55e"/>
+                <rect x="14" y="24" width="4" height="4" fill="#795548"/>
+                <rect x="26" y="26" width="5" height="5" fill="#5d4037"/>
+                <rect x="34" y="24" width="3" height="3" fill="#8d6e63"/>
+            </svg>
+            <span>Minecraft</span>
+        </div>
+
+        <div class="desktop-icon game-icon" onclick="openGame('https://deadshot.io/')">
+            <svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+                <rect width="48" height="48" rx="10" fill="#111827"/>
+                <circle cx="24" cy="20" r="12" fill="#e5e7eb"/>
+                <circle cx="19" cy="18" r="3.5" fill="#111827"/>
+                <circle cx="29" cy="18" r="3.5" fill="#111827"/>
+                <path d="M18 26 Q24 30 30 26" fill="none" stroke="#111827" stroke-width="2" stroke-linecap="round"/>
+                <rect x="20" y="24" width="3" height="3" rx="0.5" fill="#111827"/>
+                <rect x="25" y="24" width="3" height="3" rx="0.5" fill="#111827"/>
+                <circle cx="24" cy="37" r="7" fill="none" stroke="#ef4444" stroke-width="2"/>
+                <line x1="24" y1="32" x2="24" y2="42" stroke="#ef4444" stroke-width="2"/>
+                <line x1="19" y1="37" x2="29" y2="37" stroke="#ef4444" stroke-width="2"/>
+            </svg>
+            <span>Deadshot.io</span>
+        </div>
+
+        <div class="desktop-icon" id="desktop-bin-icon" onclick="openRecycleBin()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="1.5" id="desktop-bin-svg">
+                <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/>
+            </svg>
+            <span>Recycle Bin</span>
+        </div>
+
+        <div class="desktop-icon" onclick="openSettings()">
+            <svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+                <rect width="48" height="48" rx="10" fill="#1e293b"/>
+                <circle cx="24" cy="24" r="8" fill="none" stroke="#94a3b8" stroke-width="2.5"/>
+                <path d="M24 8v4M24 36v4M8 24h4M36 24h4M12.7 12.7l2.8 2.8M32.5 32.5l2.8 2.8M12.7 35.3l2.8-2.8M32.5 15.5l2.8-2.8" stroke="#cbd5e1" stroke-width="2.5" stroke-linecap="round"/>
+            </svg>
+            <span>Settings</span>
+        </div>
+
+        <div class="desktop-icon" id="desktop-vistacord-icon" onclick="openVistaCord()">
+            <svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+                <rect width="48" height="48" rx="12" fill="#5865f2"/>
+                <path d="M14 18c2.5-1.5 5.5-2.5 10-2.5s7.5 1 10 2.5" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+                <ellipse cx="18" cy="26" rx="3" ry="4" fill="#fff"/>
+                <ellipse cx="30" cy="26" rx="3" ry="4" fill="#fff"/>
+                <path d="M12 34c2 3 6 5 12 5s10-2 12-5" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity="0.9"/>
+            </svg>
+            <span>VistaCord</span>
+        </div>
+    </div>
+
+    <div class="window" id="file-explorer">
+        <div class="window-header" onmousedown="startDrag(event, 'file-explorer')">
+            <div class="window-controls" onmousedown="event.stopPropagation()">
+                <div class="mac-btn close" onclick="closeExplorer()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#4c0002" stroke-width="4"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </div>
+                <div class="mac-btn minimize" onclick="minimizeExplorer()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#5c3e00" stroke-width="4"><line x1="4" y1="12" x2="20" y2="12"/></svg>
+                </div>
+                <div class="mac-btn maximize" onclick="toggleMaximize('file-explorer')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#003305" stroke-width="4"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/></svg>
+                </div>
+            </div>
+            <div class="window-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#facc15" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                <span id="fe-title-text">File Explorer</span>
+            </div>
+            <div style="width: 65px;"></div>
+        </div>
+
+        <div class="window-action-bar" id="fe-action-bar" style="display: none;">
+            <div class="action-btn" onclick="emptyRecycleBin()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/></svg>
+                Empty Recycle Bin
+            </div>
+        </div>
+        
+        <div class="window-nav-bar">
+            <div class="address-box" id="fe-address-bar">This PC</div>
+        </div>
+
+        <div class="window-body">
+            <div class="sidebar-nav">
+                <div class="sidebar-item active" id="sb-this-pc" onclick="navigateTo('this-pc')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                    This PC
+                </div>
+                <div class="sidebar-item" id="sb-desktop" onclick="navigateTo('desktop')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                    Desktop
+                </div>
+                <div class="sidebar-item" id="sb-downloads" onclick="navigateTo('downloads')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/></svg>
+                    Downloads
+                </div>
+                <div class="sidebar-item" id="sb-photos-videos" onclick="navigateTo('photos-videos')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/></svg>
+                    Photos & Videos
+                </div>
+                <div class="sidebar-sep"></div>
+                <div class="sidebar-item" id="sb-local-disk" onclick="navigateTo('local-disk')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/></svg>
+                    Local Disk (C:)
+                </div>
+                <div class="sidebar-sep"></div>
+                <div class="sidebar-item" id="sb-recycle-bin" onclick="navigateTo('recycle-bin')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2" id="sidebar-bin-svg"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/></svg>
+                    Recycle Bin
+                </div>
+            </div>
+            <div class="explorer-content" id="explorer-main-viewport"></div>
+        </div>
+    </div>
+
+    <div class="window" id="system-terminal">
+        <div class="window-header" onmousedown="startDrag(event, 'system-terminal')">
+            <div class="window-controls" onmousedown="event.stopPropagation()">
+                <div class="mac-btn close" onclick="closeTerminal()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#4c0002" stroke-width="4"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </div>
+                <div class="mac-btn minimize" onclick="minimizeTerminal()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#5c3e00" stroke-width="4"><line x1="4" y1="12" x2="20" y2="12"/></svg>
+                </div>
+                <div class="mac-btn maximize" onclick="toggleMaximize('system-terminal')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#003305" stroke-width="4"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/></svg>
+                </div>
+            </div>
+            <div class="window-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+                <span>Terminal Shell</span>
+            </div>
+            <div style="width: 65px;"></div>
+        </div>
+        <div class="terminal-viewport" id="term-view" onclick="document.getElementById('term-input').focus()">
+            <div class="terminal-log-row">VistaX Core Shell Engine [Version 1.0.26]</div>
+            <div class="terminal-log-row">Type "help" to display all functional system instructions.</div>
+            <div class="terminal-log-row"></div>
+            <div class="terminal-input-line">
+                <span class="terminal-prompt" id="term-prompt-label">C:\></span>
+                <input type="text" class="terminal-hidden-input" id="term-input" autofocus autocomplete="off" spellcheck="false">
+            </div>
+        </div>
+    </div>
+
+    <div class="window" id="system-settings">
+        <div class="window-header" onmousedown="startDrag(event, 'system-settings')">
+            <div class="window-controls" onmousedown="event.stopPropagation()">
+                <div class="mac-btn close" onclick="closeSettings()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#4c0002" stroke-width="4"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </div>
+                <div class="mac-btn minimize" onclick="minimizeSettings()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#5c3e00" stroke-width="4"><line x1="4" y1="12" x2="20" y2="12"/></svg>
+                </div>
+                <div class="mac-btn maximize" onclick="toggleMaximize('system-settings')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#003305" stroke-width="4"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/></svg>
+                </div>
+            </div>
+            <div class="window-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+                <span>Settings</span>
+            </div>
+            <div style="width: 65px;"></div>
+        </div>
+        <div class="settings-body">
+            <div class="settings-sidebar">
+                <div class="settings-nav-item active" data-page="home" onclick="showSettingsPage('home')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+                    Home
+                </div>
+                <div class="settings-nav-item" data-page="display" onclick="showSettingsPage('display')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                    Display
+                </div>
+                <div class="settings-nav-item" data-page="personalization" onclick="showSettingsPage('personalization')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+                    Personalization
+                </div>
+                <div class="settings-nav-item" data-page="sound" onclick="showSettingsPage('sound')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+                    Sound
+                </div>
+                <div class="settings-nav-item" data-page="time" onclick="showSettingsPage('time')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    Time &amp; language
+                </div>
+                <div class="settings-nav-item" data-page="accessibility" onclick="showSettingsPage('accessibility')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="4" r="2"/><path d="M12 6v6M8 10h8M7 20l3-6h4l3 6"/></svg>
+                    Accessibility
+                </div>
+            </div>
+            <div class="settings-content">
+                <div class="settings-page active" id="settings-page-home">
+                    <h2>Settings</h2>
+                    <p class="settings-subtitle">Find a setting</p>
+                    <div class="settings-home-grid">
+                        <div class="settings-home-card" onclick="showSettingsPage('display')">
+                            <h3>Display</h3>
+                            <p>Scale and night light</p>
+                        </div>
+                        <div class="settings-home-card" onclick="showSettingsPage('personalization')">
+                            <h3>Personalization</h3>
+                            <p>Background, desktop icons</p>
+                        </div>
+                        <div class="settings-home-card" onclick="showSettingsPage('sound')">
+                            <h3>Sound</h3>
+                            <p>Volume and output</p>
+                        </div>
+                        <div class="settings-home-card" onclick="showSettingsPage('time')">
+                            <h3>Time &amp; language</h3>
+                            <p>Clock format</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-page" id="settings-page-display">
+                    <h2>Display</h2>
+                    <p class="settings-subtitle">Scale and night light</p>
+                    <div class="settings-group">
+                        <div class="settings-row">
+                            <div class="settings-row-info">
+                                <div class="settings-row-title">Scale</div>
+                                <div class="settings-row-desc">Change the size of text, apps, and icons</div>
+                            </div>
+                            <div class="settings-control" style="display:flex;align-items:center;gap:10px;">
+                                <input type="range" id="setting-scale" min="75" max="150" step="5" value="100" oninput="updateSetting('uiScale', this.value)">
+                                <span class="settings-value-label" id="scale-label">100%</span>
+                            </div>
+                        </div>
+                        <div class="settings-row">
+                            <div class="settings-row-info">
+                                <div class="settings-row-title">Night light</div>
+                                <div class="settings-row-desc">Reduce blue light to help you sleep</div>
+                            </div>
+                            <div class="settings-toggle" id="toggle-night-light" onclick="toggleSetting('nightLight')"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-page" id="settings-page-personalization">
+                    <h2>Personalization</h2>
+                    <p class="settings-subtitle">Background and desktop</p>
+                    <div class="settings-group">
+                        <div class="settings-row">
+                            <div class="settings-row-info">
+                                <div class="settings-row-title">Choose your wallpaper</div>
+                                <div class="settings-row-desc">Pick a background for VistaX</div>
+                            </div>
+                        </div>
+                        <div class="wallpaper-grid">
+                            <div class="wallpaper-option wp-aura selected" data-wallpaper="aura" onclick="updateSetting('wallpaper', 'aura')"><span>Aura</span></div>
+                            <div class="wallpaper-option wp-midnight" data-wallpaper="midnight" onclick="updateSetting('wallpaper', 'midnight')"><span>Midnight</span></div>
+                            <div class="wallpaper-option wp-sunset" data-wallpaper="sunset" onclick="updateSetting('wallpaper', 'sunset')"><span>Sunset</span></div>
+                            <div class="wallpaper-option wp-forest" data-wallpaper="forest" onclick="updateSetting('wallpaper', 'forest')"><span>Forest</span></div>
+                        </div>
+                    </div>
+                    <div class="settings-group">
+                        <div class="settings-row">
+                            <div class="settings-row-info">
+                                <div class="settings-row-title">Show desktop icons</div>
+                                <div class="settings-row-desc">Display shortcuts on the desktop</div>
+                            </div>
+                            <div class="settings-toggle on" id="toggle-desktop-icons" onclick="toggleSetting('showDesktopIcons')"></div>
+                        </div>
+                        <div class="settings-row">
+                            <div class="settings-row-info">
+                                <div class="settings-row-title">VistaX custom cursor</div>
+                                <div class="settings-row-desc">Glass-style pointer with smart hover states</div>
+                            </div>
+                            <div class="settings-toggle on" id="toggle-custom-cursor" onclick="toggleSetting('customCursor')"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-page" id="settings-page-sound">
+                    <h2>Sound</h2>
+                    <p class="settings-subtitle">Volume and device preferences</p>
+                    <div class="settings-group">
+                        <div class="settings-row">
+                            <div class="settings-row-info">
+                                <div class="settings-row-title">Master volume</div>
+                                <div class="settings-row-desc">Adjust system volume level</div>
+                            </div>
+                            <div class="settings-control" style="display:flex;align-items:center;gap:10px;">
+                                <input type="range" id="setting-volume" min="0" max="100" value="70" oninput="updateSetting('volume', this.value)">
+                                <span class="settings-value-label" id="volume-label">70%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-page" id="settings-page-time">
+                    <h2>Time &amp; language</h2>
+                    <p class="settings-subtitle">Regional format and clock</p>
+                    <div class="settings-group">
+                        <div class="settings-row">
+                            <div class="settings-row-info">
+                                <div class="settings-row-title">24-hour clock</div>
+                                <div class="settings-row-desc">Show time in 24-hour format on the taskbar</div>
+                            </div>
+                            <div class="settings-toggle" id="toggle-clock-24h" onclick="toggleSetting('clock24h')"></div>
+                        </div>
+                        <div class="settings-row">
+                            <div class="settings-row-info">
+                                <div class="settings-row-title">Show seconds</div>
+                                <div class="settings-row-desc">Display seconds on the taskbar clock</div>
+                            </div>
+                            <div class="settings-toggle" id="toggle-show-seconds" onclick="toggleSetting('showSeconds')"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-page" id="settings-page-accessibility">
+                    <h2>Accessibility</h2>
+                    <p class="settings-subtitle">Visual effects and contrast</p>
+                    <div class="settings-group">
+                        <div class="settings-row">
+                            <div class="settings-row-info">
+                                <div class="settings-row-title">Reduce motion</div>
+                                <div class="settings-row-desc">Turn off animations across VistaX</div>
+                            </div>
+                            <div class="settings-toggle" id="toggle-reduce-motion" onclick="toggleSetting('reduceMotion')"></div>
+                        </div>
+                        <div class="settings-row">
+                            <div class="settings-row-info">
+                                <div class="settings-row-title">High contrast</div>
+                                <div class="settings-row-desc">Increase contrast for better visibility</div>
+                            </div>
+                            <div class="settings-toggle" id="toggle-high-contrast" onclick="toggleSetting('highContrast')"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="window" id="vistacord-window">
+        <div class="vc-titlebar" onmousedown="startDrag(event, 'vistacord-window')">
+            <span>
+                <svg width="16" height="16" viewBox="0 0 48 48"><rect width="48" height="48" rx="12" fill="#5865f2"/><ellipse cx="18" cy="26" rx="3" ry="4" fill="#fff"/><ellipse cx="30" cy="26" rx="3" ry="4" fill="#fff"/></svg>
+                VistaCord
+                <span class="vc-live-badge" id="vc-live-badge">LIVE</span>
+            </span>
+            <div class="window-controls" onmousedown="event.stopPropagation()">
+                <div class="mac-btn close" onclick="closeVistaCord()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#4c0002" stroke-width="4"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </div>
+                <div class="mac-btn minimize" onclick="minimizeVistaCord()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#5c3e00" stroke-width="4"><line x1="4" y1="12" x2="20" y2="12"/></svg>
+                </div>
+                <div class="mac-btn maximize" onclick="toggleMaximize('vistacord-window')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#003305" stroke-width="4"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/></svg>
+                </div>
+            </div>
+        </div>
+        <div class="vc-shell">
+            <div class="vc-rail">
+                <button class="vc-rail-btn active" id="vc-rail-home" title="Home" onclick="VistaCord.showHome()">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3L2 12h3v8h6v-6h2v6h6v-8h3L12 3z"/></svg>
+                </button>
+                <div class="vc-rail-sep"></div>
+                <button class="vc-rail-btn" title="Add friend" onclick="VistaCord.openModal('add-friend')">+</button>
+                <button class="vc-rail-btn" title="Create group" onclick="VistaCord.openModal('create-gc')">G</button>
+            </div>
+            <div class="vc-sidebar">
+                <div class="vc-sidebar-head">
+                    <span>Direct Messages</span>
+                    <div class="vc-sidebar-actions">
+                        <button class="vc-icon-btn" title="Add friend" onclick="VistaCord.openModal('add-friend')">+</button>
+                        <button class="vc-icon-btn" title="New group" onclick="VistaCord.openModal('create-gc')">G</button>
+                    </div>
+                </div>
+                <div class="vc-channel-list" id="vc-channel-list"></div>
+                <div class="vc-user-bar">
+                    <div class="vc-avatar" id="vc-my-avatar">V</div>
+                    <div class="vc-user-meta">
+                        <div class="vc-user-name" id="vc-my-name">Guest</div>
+                        <div class="vc-user-tag" id="vc-my-tag">#0000</div>
+                    </div>
+                    <button class="vc-icon-btn" title="Copy your tag" onclick="VistaCord.copyMyTag()">⧉</button>
+                    <button class="vc-icon-btn" title="Refresh online profile" onclick="VistaCord.registerProfile(true)">↻</button>
+                </div>
+            </div>
+            <div class="vc-main">
+                <div class="vc-chat-head" id="vc-chat-head">
+                    <span class="vc-hash">#</span>
+                    <span id="vc-active-channel-name">welcome</span>
+                </div>
+                <div class="vc-messages" id="vc-messages">
+                    <div class="vc-welcome" id="vc-welcome">
+                        <h2>Welcome to VistaCord</h2>
+                        <p>Add friends with their VistaTag, start a DM, or create a group chat. Messages sync through the network; if something stalls, wait a few seconds or send again.</p>
+                    </div>
+                </div>
+                <div class="vc-input-wrap" id="vc-input-wrap" style="display:none;">
+                    <div class="vc-input-box">
+                        <input type="text" id="vc-message-input" placeholder="Message" autocomplete="off" spellcheck="true">
+                    </div>
+                </div>
+            </div>
+            <div class="vc-members" id="vc-members-panel">
+                <div class="vc-section-label">Members</div>
+                <div id="vc-members-list"></div>
+            </div>
+        </div>
+        <div class="vc-toast" id="vc-toast"></div>
+        <div class="vc-modal-overlay" id="vc-modal-setup">
+            <div class="vc-modal">
+                <h3>Create your VistaCord account</h3>
+                <p>Pick a username. Friends will add you using Username#tag (like Discord).</p>
+                <div class="vc-field">
+                    <label>Username</label>
+                    <input type="text" id="vc-setup-username" maxlength="20" placeholder="e.g. VistaUser">
+                </div>
+                <div class="vc-modal-actions">
+                    <button class="vc-btn vc-btn-primary" onclick="VistaCord.completeSetup()">Continue</button>
+                </div>
+            </div>
+        </div>
+        <div class="vc-modal-overlay" id="vc-modal-add-friend">
+            <div class="vc-modal">
+                <h3>Add Friend</h3>
+                <p>Enter their full VistaTag (Username#1234). They must have VistaCord open right now (you'll see "Profile is online" on their screen).</p>
+                <div class="vc-field">
+                    <label>VistaTag</label>
+                    <input type="text" id="vc-add-friend-tag" placeholder="Friend#1234">
+                </div>
+                <div class="vc-modal-actions">
+                    <button class="vc-btn vc-btn-ghost" onclick="VistaCord.closeModal('add-friend')">Cancel</button>
+                    <button class="vc-btn vc-btn-primary" onclick="VistaCord.addFriend()">Add Friend</button>
+                </div>
+            </div>
+        </div>
+        <div class="vc-modal-overlay" id="vc-modal-create-gc">
+            <div class="vc-modal">
+                <h3>Create Group Chat</h3>
+                <p>Select friends to include in this group.</p>
+                <div class="vc-field">
+                    <label>Group name</label>
+                    <input type="text" id="vc-gc-name" maxlength="32" placeholder="My squad">
+                </div>
+                <div class="vc-field">
+                    <label>Friends</label>
+                    <div class="vc-friend-pick" id="vc-gc-friend-pick"></div>
+                </div>
+                <div class="vc-modal-actions">
+                    <button class="vc-btn vc-btn-ghost" onclick="VistaCord.closeModal('create-gc')">Cancel</button>
+                    <button class="vc-btn vc-btn-primary" onclick="VistaCord.createGroup()">Create</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="search-panel">
+        <div class="section-title">Search Results</div>
+        <div class="search-results-container" id="search-results"></div>
+    </div>
+
+    <div id="start-menu">
+        <div class="menu-body">
+            <div class="section-title">Pinned Apps</div>
+            <div class="apps-grid">
+                <div class="app-item" data-name="File Explorer" onclick="openExplorer()">
+                    <div class="app-icon-wrapper"><svg viewBox="0 0 24 24" fill="none" stroke="#facc15" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></div>
+                    <div class="app-text">Explorer</div>
+                </div>
+                <div class="app-item" data-name="Terminal" onclick="openTerminal()">
+                    <div class="app-icon-wrapper"><svg viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg></div>
+                    <div class="app-text">Terminal</div>
+                </div>
+                <div class="app-item" data-name="Google Chrome" onclick="openBrowser()">
+                    <div class="app-icon-wrapper">
+                        <svg width="32" height="32" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="50" cy="50" r="48" fill="white"/>
+                            <circle cx="50" cy="50" r="30" fill="#4285F4"/>
+                            <path d="M 50 20 A 30 30 0 0 1 75.96 25.96 L 62.98 37.98 A 15 15 0 0 0 50 35 Z" fill="#EA4335"/>
+                            <path d="M 75.96 74.04 A 30 30 0 0 1 50 80 L 50 65 A 15 15 0 0 0 62.98 62.02 Z" fill="#34A853"/>
+                            <path d="M 50 80 A 30 30 0 0 1 24.04 74.04 L 37.02 62.02 A 15 15 0 0 0 50 65 Z" fill="#FBBC05"/>
+                            <circle cx="50" cy="50" r="15" fill="white"/>
+                        </svg>
+                    </div>
+                    <div class="app-text">Chrome</div>
+                </div>
+                <div class="app-item" data-name="VistaCord" onclick="openVistaCord()">
+                    <div class="app-icon-wrapper">
+                        <svg width="32" height="32" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+                            <rect width="48" height="48" rx="10" fill="#5865f2"/>
+                            <ellipse cx="18" cy="26" rx="3" ry="4" fill="#fff"/>
+                            <ellipse cx="30" cy="26" rx="3" ry="4" fill="#fff"/>
+                        </svg>
+                    </div>
+                    <div class="app-text">VistaCord</div>
+                </div>
+                <div class="app-item" data-name="Settings" onclick="openSettings()">
+                    <div class="app-icon-wrapper">
+                        <svg width="32" height="32" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+                            <rect width="48" height="48" rx="10" fill="#1e293b"/>
+                            <circle cx="24" cy="24" r="8" fill="none" stroke="#94a3b8" stroke-width="2.5"/>
+                            <path d="M24 8v4M24 36v4M8 24h4M36 24h4" stroke="#cbd5e1" stroke-width="2.5" stroke-linecap="round"/>
+                        </svg>
+                    </div>
+                    <div class="app-text">Settings</div>
+                </div>
+            </div>
+            <div class="section-title" style="margin-top: 24px;">Online Games</div>
+            <div class="apps-grid">
+                <div class="app-item" data-name="Agar.io" onclick="openGame('https://agar.io/')">
+                    <div class="app-icon-wrapper game-icon">
+                        <svg width="32" height="32" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+                            <rect width="48" height="48" rx="10" fill="#16213e"/>
+                            <circle cx="17" cy="19" r="11" fill="#22c55e"/>
+                            <circle cx="31" cy="27" r="8" fill="#ef4444"/>
+                            <circle cx="33" cy="14" r="6" fill="#3b82f6"/>
+                            <circle cx="14" cy="32" r="5" fill="#eab308"/>
+                        </svg>
+                    </div>
+                    <div class="app-text">Agar.io</div>
+                </div>
+                <div class="app-item" data-name="Veck.io" onclick="openGame('https://veck.io/')">
+                    <div class="app-icon-wrapper game-icon">
+                        <svg width="32" height="32" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+                            <rect width="48" height="48" rx="10" fill="#0f172a"/>
+                            <circle cx="24" cy="22" r="11" fill="none" stroke="#22d3ee" stroke-width="2"/>
+                            <line x1="24" y1="7" x2="24" y2="13" stroke="#22d3ee" stroke-width="2"/>
+                            <line x1="24" y1="31" x2="24" y2="37" stroke="#22d3ee" stroke-width="2"/>
+                            <line x1="7" y1="22" x2="13" y2="22" stroke="#22d3ee" stroke-width="2"/>
+                            <line x1="35" y1="22" x2="41" y2="22" stroke="#22d3ee" stroke-width="2"/>
+                            <circle cx="24" cy="22" r="2.5" fill="#ef4444"/>
+                            <path d="M12 38 L18 34 L28 34 L34 38 L34 41 L12 41 Z" fill="#64748b"/>
+                        </svg>
+                    </div>
+                    <div class="app-text">Veck.io</div>
+                </div>
+                <div class="app-item" data-name="Minecraft Classic" onclick="openGame('https://classic.minecraft.net/')">
+                    <div class="app-icon-wrapper game-icon">
+                        <svg width="32" height="32" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+                            <rect width="48" height="48" rx="10" fill="#87ceeb"/>
+                            <rect x="10" y="22" width="28" height="16" fill="#6d4c41"/>
+                            <rect x="10" y="10" width="28" height="12" fill="#4ade80"/>
+                            <rect x="12" y="12" width="5" height="5" fill="#22c55e"/>
+                            <rect x="22" y="11" width="5" height="5" fill="#16a34a"/>
+                            <rect x="14" y="24" width="4" height="4" fill="#795548"/>
+                        </svg>
+                    </div>
+                    <div class="app-text">Minecraft</div>
+                </div>
+                <div class="app-item" data-name="Deadshot.io" onclick="openGame('https://deadshot.io/')">
+                    <div class="app-icon-wrapper game-icon">
+                        <svg width="32" height="32" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+                            <rect width="48" height="48" rx="10" fill="#111827"/>
+                            <circle cx="24" cy="20" r="12" fill="#e5e7eb"/>
+                            <circle cx="19" cy="18" r="3.5" fill="#111827"/>
+                            <circle cx="29" cy="18" r="3.5" fill="#111827"/>
+                            <path d="M18 26 Q24 30 30 26" fill="none" stroke="#111827" stroke-width="2"/>
+                            <circle cx="24" cy="37" r="7" fill="none" stroke="#ef4444" stroke-width="2"/>
+                            <line x1="24" y1="32" x2="24" y2="42" stroke="#ef4444" stroke-width="2"/>
+                            <line x1="19" y1="37" x2="29" y2="37" stroke="#ef4444" stroke-width="2"/>
+                        </svg>
+                    </div>
+                    <div class="app-text">Deadshot</div>
+                </div>
+            </div>
+        </div>
+        <div class="menu-footer">
+            <div class="profile-section"><div class="avatar">V</div><div class="username">Admin</div></div>
+            <div style="display:flex;gap:8px;align-items:center;">
+                <div class="power-btn" onclick="openSettings()" title="Settings">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f3f4f6" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+                </div>
+                <div class="power-btn" id="shutdown-trigger"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f3f4f6" stroke-width="2"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="taskbar">
+        <div class="taskbar-left"></div>
+        <div class="taskbar-center">
+            <div class="tb-icon start-btn" id="start-btn-toggle">
+                <div class="start-logo"><span></span><span></span><span></span><span></span></div>
+            </div>
+            <div class="taskbar-search" id="search-bar-trigger">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="text" id="search-input" placeholder="Search apps..." autocomplete="off">
+            </div>
+            <div class="tb-icon" id="tb-explorer-btn" onclick="toggleWindow('file-explorer')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#facc15" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+            </div>
+            <div class="tb-icon" id="tb-terminal-btn" onclick="toggleWindow('system-terminal')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+            </div>
+            <div class="tb-icon" id="tb-vistacord-btn" onclick="toggleWindow('vistacord-window')" title="VistaCord">
+                <svg width="20" height="20" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+                    <rect width="48" height="48" rx="12" fill="#5865f2"/>
+                    <ellipse cx="18" cy="26" rx="3" ry="4" fill="#fff"/>
+                    <ellipse cx="30" cy="26" rx="3" ry="4" fill="#fff"/>
+                </svg>
+            </div>
+            <div class="tb-icon" id="tb-chrome-btn" onclick="openBrowser()">
+                <svg width="20" height="20" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="50" cy="50" r="48" fill="white"/>
+                    <circle cx="50" cy="50" r="30" fill="#4285F4"/>
+                    <path d="M 50 20 A 30 30 0 0 1 75.96 25.96 L 62.98 37.98 A 15 15 0 0 0 50 35 Z" fill="#EA4335"/>
+                    <path d="M 75.96 74.04 A 30 30 0 0 1 50 80 L 50 65 A 15 15 0 0 0 62.98 62.02 Z" fill="#34A853"/>
+                    <path d="M 50 80 A 30 30 0 0 1 24.04 74.04 L 37.02 62.02 A 15 15 0 0 0 50 65 Z" fill="#FBBC05"/>
+                    <circle cx="50" cy="50" r="15" fill="white"/>
+                </svg>
+            </div>
+            <div class="tb-icon" id="tb-settings-btn" onclick="toggleWindow('system-settings')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+            </div>
+        </div>
+        <div class="taskbar-right">
+            <div id="vista-wifi-hardware" title="Checking Connection...">
+                <svg viewBox="0 0 24 24">
+                    <path d="M12 21a2 2 0 1 1 0-4 2 2 0 0 1 0 4zM4.8 11.8a10 10 0 0 1 14.4 0l-1.4 1.4a8 8 0 0 0-11.6 0l-1.4-1.4zm2.9 2.9a6 6 0 0 1 8.6 0l-1.4 1.4a4 4 0 0 0-5.8 0l-1.4-1.4zM1.9 8.9a14 14 0 0 1 20.2 0l-1.4 1.4a12 12 0 0 0-17.4 0L1.9 8.9z"/>
+                </svg>
+            </div>
+
+            <div class="tray-volume-container">
+                <svg viewBox="0 0 24 24"><path d="M11 5L6 9H2v6h4l5 4V5zM15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+                <input type="range" class="volume-range-slider" min="0" max="100" value="70" id="vista-system-volume" oninput="updateInternalOSVolume(this.value)">
+            </div>
+
+            <div id="system-tray"><span id="clock">00:00 AM</span><span id="date">01/01/2026</span></div>
+        </div>
+    </div>
+
+    <div id="context-menu">
+        <div class="context-item" onclick="location.reload()">Refresh</div>
+        <div class="context-item" onclick="openTerminal()">Terminal</div>
+        <div class="context-separator"></div>
+        <div class="context-item" onclick="openSettings()">Personalize</div>
+    </div>
+
+    <div id="desktop-selection-box"></div>
+
+    </div><!-- #os-root -->
+
+    <script>
+        // Window state storage
+        let windowStates = {
+            'file-explorer': { minimized: false },
+            'system-terminal': { minimized: false },
+            'system-settings': { minimized: false },
+            'vistacord-window': { minimized: false }
+        };
+
+        const DEFAULT_SETTINGS = {
+            uiScale: 100,
+            wallpaper: 'aura',
+            volume: 70,
+            clock24h: false,
+            showSeconds: false,
+            nightLight: false,
+            reduceMotion: false,
+            highContrast: false,
+            showDesktopIcons: true,
+            customCursor: true
+        };
+
+        let systemSettings = loadSettings();
+
+        function loadSettings() {
+            try {
+                const saved = localStorage.getItem('vistax-settings');
+                return saved ? { ...DEFAULT_SETTINGS, ...JSON.parse(saved) } : { ...DEFAULT_SETTINGS };
+            } catch (e) {
+                return { ...DEFAULT_SETTINGS };
+            }
+        }
+
+        function saveSettings() {
+            localStorage.setItem('vistax-settings', JSON.stringify(systemSettings));
+        }
+
+        function applyAllSettings() {
+            applyDisplaySettings();
+            applyWallpaper(systemSettings.wallpaper);
+            applyVolume(systemSettings.volume);
+            applyBodyClasses();
+            syncSettingsUI();
+            updateClock();
+            VistaCursor.setEnabled(systemSettings.customCursor !== false);
+        }
+
+        function applyDisplaySettings() {
+            const root = document.getElementById('os-root');
+            const uiScale = systemSettings.uiScale / 100;
+            root.style.width = (100 / uiScale) + 'vw';
+            root.style.height = (100 / uiScale) + 'vh';
+            root.style.transform = 'scale(' + uiScale + ')';
+        }
+
+        function applyWallpaper(name) {
+            document.body.classList.remove('wallpaper-aura', 'wallpaper-midnight', 'wallpaper-sunset', 'wallpaper-forest');
+            document.body.classList.add('wallpaper-' + name);
+            document.querySelectorAll('.wallpaper-option').forEach(el => {
+                el.classList.toggle('selected', el.dataset.wallpaper === name);
+            });
+        }
+
+        function applyVolume(val) {
+            const volume = parseInt(val, 10);
+            const tray = document.getElementById('vista-system-volume');
+            const settings = document.getElementById('setting-volume');
+            const label = document.getElementById('volume-label');
+            if (tray) tray.value = volume;
+            if (settings) settings.value = volume;
+            if (label) label.textContent = volume + '%';
+            document.body.style.setProperty('--system-volume', volume / 100);
+        }
+
+        function applyBodyClasses() {
+            document.body.classList.toggle('night-light', systemSettings.nightLight);
+            document.body.classList.toggle('reduce-motion', systemSettings.reduceMotion);
+            document.body.classList.toggle('high-contrast', systemSettings.highContrast);
+            document.body.classList.toggle('hide-desktop-icons', !systemSettings.showDesktopIcons);
+        }
+
+        function syncSettingsUI() {
+            const scale = document.getElementById('setting-scale');
+            const scaleLabel = document.getElementById('scale-label');
+            if (scale) scale.value = systemSettings.uiScale;
+            if (scaleLabel) scaleLabel.textContent = systemSettings.uiScale + '%';
+
+            setToggleState('toggle-night-light', systemSettings.nightLight);
+            setToggleState('toggle-desktop-icons', systemSettings.showDesktopIcons);
+            setToggleState('toggle-clock-24h', systemSettings.clock24h);
+            setToggleState('toggle-show-seconds', systemSettings.showSeconds);
+            setToggleState('toggle-reduce-motion', systemSettings.reduceMotion);
+            setToggleState('toggle-high-contrast', systemSettings.highContrast);
+        }
+
+        function setToggleState(id, on) {
+            const el = document.getElementById(id);
+            if (el) el.classList.toggle('on', !!on);
+        }
+
+        function updateSetting(key, value) {
+            if (key === 'uiScale' || key === 'volume') {
+                systemSettings[key] = parseInt(value, 10);
+            } else {
+                systemSettings[key] = value;
+            }
+
+            if (key === 'wallpaper') applyWallpaper(value);
+            if (key === 'volume') applyVolume(value);
+            if (key === 'uiScale') applyDisplaySettings();
+            if (key === 'clock24h' || key === 'showSeconds') updateClock();
+
+            if (['nightLight', 'reduceMotion', 'highContrast', 'showDesktopIcons'].includes(key)) {
+                applyBodyClasses();
+            }
+
+            if (key === 'uiScale') {
+                document.getElementById('scale-label').textContent = systemSettings.uiScale + '%';
+            }
+            if (key === 'volume') {
+                document.getElementById('volume-label').textContent = systemSettings.volume + '%';
+            }
+
+            saveSettings();
+        }
+
+        function toggleSetting(key) {
+            systemSettings[key] = !systemSettings[key];
+            applyBodyClasses();
+            syncSettingsUI();
+            if (key === 'clock24h' || key === 'showSeconds') updateClock();
+            saveSettings();
+        }
+
+        function showSettingsPage(page) {
+            document.querySelectorAll('.settings-nav-item').forEach(item => {
+                item.classList.toggle('active', item.dataset.page === page);
+            });
+            document.querySelectorAll('.settings-page').forEach(panel => {
+                panel.classList.toggle('active', panel.id === 'settings-page-' + page);
+            });
+        }
+
+        function openSettings() {
+            restoreApp('system-settings');
+            syncSettingsUI();
+            document.getElementById('start-menu').classList.remove('open');
+        }
+
+        function closeSettings() {
+            closeApp('system-settings');
+        }
+
+        function minimizeSettings() {
+            minimizeApp('system-settings');
+        }
+
+        function taskbarBtnForWindow(id) {
+            const map = {
+                'file-explorer': 'tb-explorer-btn',
+                'system-terminal': 'tb-terminal-btn',
+                'system-settings': 'tb-settings-btn',
+                'vistacord-window': 'tb-vistacord-btn'
+            };
+            return document.getElementById(map[id] || ('tb-' + id.split('-')[0] + '-btn'));
+        }
+
+        // --- WINDOW MANAGEMENT ---
+        function ensureWindowState(id) {
+            if (!windowStates[id]) windowStates[id] = { minimized: false };
+        }
+
+        function setTaskbarState(id, running, minimized) {
+            const btn = taskbarBtnForWindow(id);
+            if (!btn) return;
+            btn.classList.toggle('active', !!running);
+            btn.classList.toggle('minimized', !!minimized);
+        }
+
+        function bringWindowToFront(win) {
+            document.querySelectorAll('.window').forEach(w => w.style.zIndex = 100);
+            win.style.zIndex = 200;
+        }
+
+        function restoreApp(id) {
+            const win = document.getElementById(id);
+            if (!win) return;
+            ensureWindowState(id);
+            windowStates[id].minimized = false;
+            win.classList.add('open');
+            setTaskbarState(id, true, false);
+            bringWindowToFront(win);
+            if (id === 'vistacord-window') VistaCord.init();
+        }
+
+        function minimizeApp(id) {
+            const win = document.getElementById(id);
+            if (!win) return;
+            ensureWindowState(id);
+            windowStates[id].minimized = true;
+            win.classList.remove('open');
+            setTaskbarState(id, true, true);
+            if (id === 'vistacord-window') VistaCord.disconnectAll(false);
+        }
+
+        function closeApp(id) {
+            const win = document.getElementById(id);
+            if (!win) return;
+            ensureWindowState(id);
+            windowStates[id].minimized = false;
+            win.classList.remove('open');
+            win.classList.remove('maximized');
+            setTaskbarState(id, false, false);
+            if (id === 'vistacord-window') VistaCord.disconnectAll(true);
+        }
+
+        function toggleWindow(id) {
+            const win = document.getElementById(id);
+            ensureWindowState(id);
+
+            if (windowStates[id].minimized) {
+                restoreApp(id);
+            } else if (win.classList.contains('open')) {
+                minimizeApp(id);
+            } else {
+                restoreApp(id);
+            }
+        }
+
+        function openExplorer() {
+            restoreApp('file-explorer');
+            navigateTo('this-pc');
+        }
+
+        function closeExplorer() {
+            closeApp('file-explorer');
+        }
+
+        function minimizeExplorer() {
+            minimizeApp('file-explorer');
+        }
+
+        function openTerminal() {
+            restoreApp('system-terminal');
+            document.getElementById('term-input').focus();
+        }
+
+        function closeTerminal() {
+            closeApp('system-terminal');
+        }
+
+        function minimizeTerminal() {
+            minimizeApp('system-terminal');
+        }
+
+        function openBrowser() {
+            window.open('https://www.google.com', '_blank', 'noopener,noreferrer');
+        }
+
+        function openVistaCord() {
+            restoreApp('vistacord-window');
+            document.getElementById('start-menu').classList.remove('open');
+        }
+
+        function closeVistaCord() {
+            closeApp('vistacord-window');
+        }
+
+        function minimizeVistaCord() {
+            minimizeApp('vistacord-window');
+        }
+
+        function openGame(url) {
+            window.open(url, '_blank', 'noopener,noreferrer');
+        }
+
+        function toggleMaximize(id) {
+            const win = document.getElementById(id);
+            win.classList.toggle('maximized');
+            if (id === 'vistacord-window') {
+                if (win.classList.contains('maximized')) {
+                    win.style.height = '';
+                    win.style.minHeight = '';
+                    win.style.maxHeight = '';
+                } else {
+                    win.style.height = '620px';
+                    win.style.minHeight = '620px';
+                    win.style.maxHeight = '620px';
+                }
+            }
+        }
+
+        function getUIScale() {
+            return (systemSettings.uiScale || 100) / 100;
+        }
+
+        function openRecycleBin() {
+            openExplorer();
+            navigateTo('recycle-bin');
+        }
+
+        // --- DRAG WINDOW SYSTEM ---
+        let dragObj = null;
+        let offsetX = 0;
+        let offsetY = 0;
+        let dragRootRect = null;
+
+        function startDrag(e, id) {
+            const win = document.getElementById(id);
+            if (win.classList.contains('maximized')) return;
+            if (e.target.closest('.window-controls')) return;
+            if (e.target.closest('input, textarea, select, button')) return;
+            
+            dragObj = win;
+            const scale = getUIScale();
+            const winRect = win.getBoundingClientRect();
+            const root = document.getElementById('os-root');
+            dragRootRect = root.getBoundingClientRect();
+            offsetX = (e.clientX - winRect.left) / scale;
+            offsetY = (e.clientY - winRect.top) / scale;
+            
+            document.querySelectorAll('.window').forEach(w => w.style.zIndex = 100);
+            win.style.zIndex = 200;
+            
+            document.addEventListener('mousemove', dragWindow);
+            document.addEventListener('mouseup', stopDragWindow);
+        }
+
+        function dragWindow(e) {
+            if (!dragObj || !dragRootRect) return;
+            const scale = getUIScale();
+            dragObj.style.left = ((e.clientX - dragRootRect.left) / scale - offsetX) + 'px';
+            dragObj.style.top = ((e.clientY - dragRootRect.top) / scale - offsetY) + 'px';
+        }
+
+        function stopDragWindow() {
+            dragObj = null;
+            dragRootRect = null;
+            document.removeEventListener('mousemove', dragWindow);
+            document.removeEventListener('mouseup', stopDragWindow);
+        }
+
+        // --- FILE SYSTEM NAVIGATION ---
+        function navigateTo(target) {
+            const viewport = document.getElementById('explorer-main-viewport');
+            const address = document.getElementById('fe-address-bar');
+            const actionBar = document.getElementById('fe-action-bar');
+            const title = document.getElementById('fe-title-text');
+            
+            document.querySelectorAll('.sidebar-item').forEach(item => item.classList.remove('active'));
+            actionBar.style.display = "none";
+
+            if (target === 'this-pc') {
+                document.getElementById('sb-this-pc').classList.add('active');
+                address.innerText = "This PC";
+                if (title) title.textContent = "File Explorer";
+                viewport.innerHTML = `
+                    <div class="drive-card" onclick="navigateTo('local-disk')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="1.5"><rect x="2" y="6" width="20" height="12" rx="2"/></svg>
+                        <div class="drive-info">
+                            <div class="drive-name">Local Disk (C:)</div>
+                            <div class="drive-progress-bg"><div class="drive-progress-fill"></div></div>
+                            <div class="drive-space-text">42 GB free of 120 GB</div>
+                        </div>
+                    </div>`;
+            } else if (target === 'local-disk') {
+                document.getElementById('sb-local-disk').classList.add('active');
+                address.innerText = "This PC > Local Disk (C:)";
+                if (title) title.textContent = "File Explorer";
+                viewport.innerHTML = `
+                    <div class="files-grid">
+                        <div class="file-item"><svg viewBox="0 0 24 24" fill="none" stroke="#facc15" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg><span>Program Files</span></div>
+                        <div class="file-item"><svg viewBox="0 0 24 24" fill="none" stroke="#facc15" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg><span>Users</span></div>
+                        <div class="file-item"><svg viewBox="0 0 24 24" fill="none" stroke="#facc15" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg><span>Windows</span></div>
+                    </div>`;
+            } else if (target === 'recycle-bin') {
+                document.getElementById('sb-recycle-bin').classList.add('active');
+                address.innerText = "Recycle Bin";
+                if (title) title.textContent = "Recycle Bin";
+                actionBar.style.display = "flex";
+                viewport.innerHTML = `<div class="empty-directory-message" id="bin-status-msg">The folder is empty.</div>`;
+            } else {
+                document.getElementById('sb-' + target)?.classList.add('active');
+                const label = target.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+                address.innerText = label;
+                if (title) title.textContent = label;
+                viewport.innerHTML = '<div class="empty-directory-message">This folder is empty.</div>';
+            }
+        }
+
+        function emptyRecycleBin() {
+            const msg = document.getElementById('bin-status-msg');
+            if (msg) msg.textContent = 'The folder is empty.';
+            alert('Recycle bin emptied.');
+        }
+
+        // --- START MENU & SEARCH PANELS ---
+        const startBtn = document.getElementById('start-btn-toggle');
+        const startMenu = document.getElementById('start-menu');
+        const searchInput = document.getElementById('search-input');
+        const searchPanel = document.getElementById('search-panel');
+
+        startBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            startMenu.classList.toggle('open');
+            searchPanel.classList.remove('open');
+        });
+
+        searchInput.addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase().trim();
+            const container = document.getElementById('search-results');
+            
+            if(query.length > 0) {
+                startMenu.classList.remove('open');
+                searchPanel.classList.add('open');
+                
+                const apps = [
+                    { name: "File Explorer", action: "openExplorer()" },
+                    { name: "Terminal Shell", action: "openTerminal()" },
+                    { name: "Settings", action: "openSettings()" },
+                    { name: "Google Chrome", action: "openBrowser()" },
+                    { name: "VistaCord", action: "openVistaCord()" },
+                    { name: "Agar.io", action: "openGame('https://agar.io/')" },
+                    { name: "Veck.io", action: "openGame('https://veck.io/')" },
+                    { name: "Minecraft Classic", action: "openGame('https://classic.minecraft.net/')" },
+                    { name: "Deadshot.io", action: "openGame('https://deadshot.io/')" }
+                ];
+                
+                const matches = apps.filter(a => a.name.toLowerCase().includes(query));
+                if(matches.length > 0) {
+                    container.innerHTML = matches.map(m => `
+                        <div class="search-result-item" onclick="${m.action}; document.getElementById('search-panel').classList.remove('open'); document.getElementById('search-input').value='';">
+                            <div class="search-result-title">${m.name}</div>
+                        </div>
+                    `).join('');
+                } else {
+                    container.innerHTML = `<div class="no-results-msg">No local apps match your query.</div>`;
+                }
+            } else {
+                searchPanel.classList.remove('open');
+            }
+        });
+
+        document.addEventListener('click', () => {
+            startMenu.classList.remove('open');
+            searchPanel.classList.remove('open');
+            document.getElementById('context-menu').style.display = 'none';
+        });
+
+        startMenu.addEventListener('click', e => e.stopPropagation());
+        searchPanel.addEventListener('click', e => e.stopPropagation());
+        document.getElementById('search-bar-trigger').addEventListener('click', e => e.stopPropagation());
+
+        // --- CONTEXT MENU MANAGEMENT ---
+        document.addEventListener('contextmenu', (e) => {
+            if (e.target.closest('input, textarea')) return;
+            e.preventDefault();
+            const cm = document.getElementById('context-menu');
+            const pad = 8;
+            const maxX = window.innerWidth - cm.offsetWidth - pad;
+            const maxY = window.innerHeight - cm.offsetHeight - pad;
+            cm.style.display = 'block';
+            cm.style.left = Math.min(Math.max(pad, e.clientX), maxX) + 'px';
+            cm.style.top = Math.min(Math.max(pad, e.clientY), maxY) + 'px';
+        });
+
+        // --- SELECTION RECTANGLE ---
+        const selectionBox = document.getElementById("desktop-selection-box");
+        let selecting = false;
+        let startX = 0, startY = 0;
+
+        document.addEventListener("mousedown", (e) => {
+            if (e.button !== 0) return;
+            if (e.target.closest('.window') || e.target.closest('#taskbar') || e.target.closest('#start-menu') ||
+                e.target.closest('#search-panel') || e.target.closest('#context-menu') ||
+                e.target.closest('.vc-modal-overlay')) return;
+            
+            selecting = true;
+            startX = e.clientX;
+            startY = e.clientY;
+            
+            selectionBox.style.left = startX + "px";
+            selectionBox.style.top = startY + "px";
+            selectionBox.style.width = "0px";
+            selectionBox.style.height = "0px";
+            selectionBox.style.display = "block";
+        });
+
+        document.addEventListener("mousemove", (e) => {
+            if (!selecting) return;
+            let currentX = e.clientX;
+            let currentY = e.clientY;
+
+            let width = Math.abs(currentX - startX);
+            let height = Math.abs(currentY - startY);
+
+            selectionBox.style.width = width + "px";
+            selectionBox.style.height = height + "px";
+            selectionBox.style.left = Math.min(currentX, startX) + "px";
+            selectionBox.style.top = Math.min(currentY, startY) + "px";
+        });
+
+        document.addEventListener("mouseup", () => {
+            selecting = false;
+            selectionBox.style.display = "none";
+        });
+
+        // --- SYSTEM TIME ---
+        function updateClock() {
+            const now = new Date();
+            let hours = now.getHours();
+            let minutes = now.getMinutes();
+            let seconds = now.getSeconds();
+            minutes = minutes < 10 ? '0' + minutes : minutes;
+            seconds = seconds < 10 ? '0' + seconds : seconds;
+
+            let clockText;
+            if (systemSettings.clock24h) {
+                clockText = (hours < 10 ? '0' + hours : hours) + ':' + minutes;
+            } else {
+                let ampm = hours >= 12 ? 'PM' : 'AM';
+                hours = hours % 12;
+                hours = hours ? hours : 12;
+                clockText = hours + ':' + minutes + ' ' + ampm;
+            }
+
+            if (systemSettings.showSeconds) {
+                clockText += systemSettings.clock24h ? ':' + seconds : ' ' + seconds + 's';
+            }
+
+            document.getElementById('clock').innerText = clockText;
+
+            let d = now.getDate();
+            let m = now.getMonth() + 1;
+            let y = now.getFullYear();
+            document.getElementById('date').innerText = (m<10?'0'+m:m) + '/' + (d<10?'0'+d:d) + '/' + y;
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        function updateInternalOSVolume(val) {
+            systemSettings.volume = parseInt(val, 10);
+            applyVolume(val);
+            saveSettings();
+        }
+
+        const VistaCursor = (function() {
+            const HOTSPOTS = {
+                default: [2, 2],
+                pointer: [9, 4],
+                grabbing: [14, 14],
+                text: [7, 12],
+                move: [16, 16],
+                crosshair: [16, 16],
+                notallowed: [16, 16],
+                'resize-h': [16, 16]
+            };
+            const SKIP_IDS = new Set(['vistax-cursor', 'night-light-overlay']);
+            let el = null;
+            let enabled = true;
+            let visible = false;
+            let pressing = false;
+            let rafId = 0;
+            let mx = -100;
+            let my = -100;
+            let mode = 'default';
+            let canUse = false;
+
+            function init() {
+                el = document.getElementById('vistax-cursor');
+                canUse = !!(el && window.matchMedia('(pointer: fine)').matches);
+                if (!canUse) return;
+
+                document.addEventListener('mousemove', onMove, { passive: true });
+                document.addEventListener('mousedown', onDown, true);
+                document.addEventListener('mouseup', onUp, true);
+                document.addEventListener('mouseleave', onLeave);
+                document.addEventListener('visibilitychange', onVisibility);
+                window.addEventListener('blur', hide);
+            }
+
+            function setEnabled(on) {
+                enabled = on !== false && canUse;
+                document.body.classList.toggle('vx-custom-cursor', enabled);
+                if (!enabled) hide();
+                else scheduleTick();
+            }
+
+            function onMove(e) {
+                mx = e.clientX;
+                my = e.clientY;
+                if (!enabled) return;
+                show();
+                scheduleTick();
+            }
+
+            function onDown() {
+                if (!enabled) return;
+                pressing = true;
+                el.classList.add('pressing');
+                scheduleTick();
+            }
+
+            function onUp() {
+                pressing = false;
+                if (el) el.classList.remove('pressing');
+                scheduleTick();
+            }
+
+            function onLeave(e) {
+                if (e.relatedTarget) return;
+                hide();
+            }
+
+            function onVisibility() {
+                if (document.hidden) hide();
+            }
+
+            function show() {
+                if (!el || visible) return;
+                visible = true;
+                el.classList.add('visible');
+            }
+
+            function hide() {
+                if (!el) return;
+                visible = false;
+                el.classList.remove('visible');
+            }
+
+            function scheduleTick() {
+                if (!enabled || rafId) return;
+                rafId = requestAnimationFrame(tick);
+            }
+
+            const MODE_CLASSES = ['default', 'pointer', 'grabbing', 'text', 'move', 'crosshair', 'notallowed', 'resize-h'];
+
+            function setModeClass(nextMode) {
+                MODE_CLASSES.forEach(m => el.classList.remove('mode-' + m));
+                el.classList.add('mode-' + nextMode);
+            }
+
+            function tick() {
+                rafId = 0;
+                if (!enabled || !el) return;
+
+                const nextMode = resolveMode(mx, my);
+                if (nextMode !== mode) {
+                    mode = nextMode;
+                    setModeClass(mode);
+                }
+                el.classList.toggle('pressing', pressing);
+                if (visible) el.classList.add('visible');
+
+                const spot = HOTSPOTS[mode] || HOTSPOTS.default;
+                el.style.transform = 'translate3d(' + (mx - spot[0]) + 'px,' + (my - spot[1]) + 'px,0)';
+            }
+
+            function resolveMode(x, y) {
+                if (typeof dragObj !== 'undefined' && dragObj) return pressing ? 'grabbing' : 'move';
+
+                const sel = document.getElementById('desktop-selection-box');
+                if (sel && sel.style.display === 'block') return 'crosshair';
+
+                const hit = document.elementFromPoint(x, y);
+                let base = mapCursorFromElement(hit);
+                if (pressing && (base === 'pointer' || base === 'move')) return 'grabbing';
+                return base;
+            }
+
+            function mapCursorFromElement(node) {
+                let el = node;
+                while (el && el !== document.documentElement) {
+                    if (el.id && SKIP_IDS.has(el.id)) {
+                        el = el.parentElement;
+                        continue;
+                    }
+                    if (el.disabled || el.getAttribute('aria-disabled') === 'true') {
+                        return 'notallowed';
+                    }
+                    const attr = el.getAttribute && el.getAttribute('data-vx-cursor');
+                    if (attr) return attr;
+
+                    const cur = window.getComputedStyle(el).cursor;
+                    if (cur && cur !== 'auto' && cur !== 'default') {
+                        if (cur === 'pointer' || cur.includes('pointer')) return 'pointer';
+                        if (cur === 'text' || cur.includes('text')) return 'text';
+                        if (cur === 'move' || cur.includes('move')) return 'move';
+                        if (cur === 'grabbing' || cur === 'grab') return pressing ? 'grabbing' : 'pointer';
+                        if (cur === 'crosshair') return 'crosshair';
+                        if (cur === 'not-allowed' || cur === 'no-drop') return 'notallowed';
+                        if (cur.includes('ew-resize') || cur.includes('w-resize') || cur.includes('e-resize')) return 'resize-h';
+                    }
+                    el = el.parentElement;
+                }
+                return 'default';
+            }
+
+            init();
+            return { setEnabled };
+        })();
+
+        window.addEventListener('resize', applyDisplaySettings);
+        applyAllSettings();
+
+        function escapeTerminalText(text) {
+            return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+
+        function runTerminalCommand(cmd) {
+            const lower = cmd.trim().toLowerCase();
+            if (lower === 'help') {
+                return 'Commands: help, clear, time, date, echo <text>, explorer, vistacord, settings';
+            }
+            if (lower === 'clear') {
+                return '__CLEAR__';
+            }
+            if (lower === 'time') {
+                return new Date().toLocaleTimeString();
+            }
+            if (lower === 'date') {
+                return new Date().toLocaleDateString();
+            }
+            if (lower.startsWith('echo ')) {
+                return cmd.slice(5);
+            }
+            if (lower === 'explorer') {
+                openExplorer();
+                return 'Opening File Explorer...';
+            }
+            if (lower === 'vistacord') {
+                openVistaCord();
+                return 'Opening VistaCord...';
+            }
+            if (lower === 'settings') {
+                openSettings();
+                return 'Opening Settings...';
+            }
+            return 'Unknown command. Type "help" for a list of commands.';
+        }
+
+        async function updateWifiStatus() {
+            const el = document.getElementById('vista-wifi-hardware');
+            if (!el) return;
+            if (!navigator.onLine) {
+                el.title = 'No internet connection';
+                el.style.color = '#ef4444';
+                return;
+            }
+            el.title = 'Connected';
+            el.style.color = '#34d399';
+            try {
+                const ctrl = new AbortController();
+                setTimeout(() => ctrl.abort(), 4000);
+                await fetch('https://ntfy.sh/', { mode: 'no-cors', signal: ctrl.signal });
+            } catch (e) {
+                el.title = 'Connected (limited)';
+                el.style.color = '#facc15';
+            }
+        }
+        updateWifiStatus();
+        setInterval(updateWifiStatus, 30000);
+        window.addEventListener('online', updateWifiStatus);
+        window.addEventListener('offline', updateWifiStatus);
+
+        const shutdownBtn = document.getElementById('shutdown-trigger');
+        if (shutdownBtn) {
+            shutdownBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (confirm('Shut down VistaX?')) {
+                    document.getElementById('os-root').style.transition = 'opacity 0.6s ease';
+                    document.getElementById('os-root').style.opacity = '0';
+                    setTimeout(() => location.reload(), 700);
+                }
+            });
+        }
+
+        document.querySelectorAll('.vc-modal-overlay').forEach(el => {
+            el.addEventListener('click', (e) => e.stopPropagation());
+        });
+
+        // --- VISTACORD (REAL-TIME CHAT) ---
+        const VistaCord = {
+            STORAGE_KEY: 'vistacord-data-v1',
+            NTFY: 'https://ntfy.sh',
+            DIRECTORY_TOPIC: 'vistacord-directory',
+            AVATAR_COLORS: ['#5865f2', '#57f287', '#fee75c', '#eb459e', '#ed4245', '#3ba55d', '#faa61a', '#00b0f4'],
+            data: null,
+            activeChannelId: null,
+            eventSources: {},
+            broadcast: null,
+            messageIds: new Set(),
+            initialized: false,
+            profileHeartbeat: null,
+            pollTimers: {},
+            lastNtfyIds: {},
+            pollFailStreak: 0,
+            presenceCache: {},
+            presenceTimer: null,
+            PRESENCE_TTL_MS: 90000,
+
+            async ntfyFetchJsonArray(absUrl) {
+                const parseArr = async (response) => {
+                    const text = await response.text();
+                    if (!text || !text.trim()) return [];
+                    const data = JSON.parse(text);
+                    return Array.isArray(data) ? data : [];
+                };
+                try {
+                    const res = await fetch(absUrl, { cache: 'no-store' });
+                    if (res.ok) return await parseArr(res);
+                } catch (e) {}
+                const wrapped = [
+                    'https://api.allorigins.win/raw?url=',
+                    'https://corsproxy.io/?',
+                    'https://api.codetabs.com/v1/proxy?quest='
+                ];
+                for (const prefix of wrapped) {
+                    try {
+                        const res = await fetch(prefix + encodeURIComponent(absUrl), { cache: 'no-store' });
+                        if (!res.ok) continue;
+                        return await parseArr(res);
+                    } catch (e) {}
+                }
+                throw new Error('ntfy-fetch');
+            },
+
+            async ntfyPost(topic, headers, body) {
+                const url = this.NTFY + '/' + topic;
+                const opts = { method: 'POST', headers, body, cache: 'no-store' };
+                try {
+                    const res = await fetch(url, opts);
+                    if (res.ok) return true;
+                } catch (e) {}
+                try {
+                    const proxied = 'https://corsproxy.io/?' + encodeURIComponent(url);
+                    const res = await fetch(proxied, opts);
+                    if (res.ok) return true;
+                } catch (e) {}
+                try {
+                    const proxied = 'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(url);
+                    const res = await fetch(proxied, opts);
+                    if (res.ok) return true;
+                } catch (e) {}
+                return false;
+            },
+
+            ntfyPublishViaGet(topic, messageStr, titleStr) {
+                const base = this.NTFY + '/' + topic + '/publish?';
+                let msg = messageStr;
+                let full = base + 'title=' + encodeURIComponent((titleStr || '').slice(0, 80)) + '&message=' + encodeURIComponent(msg);
+                while (full.length > 3200 && msg.length > 40) {
+                    msg = msg.slice(0, Math.floor(msg.length * 0.8));
+                    full = base + 'title=' + encodeURIComponent((titleStr || '').slice(0, 80)) + '&message=' + encodeURIComponent(msg);
+                }
+                const fire = (u) => {
+                    const img = new Image();
+                    img.decoding = 'async';
+                    img.src = u;
+                };
+                fire(full);
+                fire('https://corsproxy.io/?' + encodeURIComponent(full));
+                return true;
+            },
+
+            init() {
+                this.load();
+                try {
+                    this.broadcast = this.broadcast || new BroadcastChannel('vistacord-sync');
+                    this.broadcast.onmessage = (e) => this.onBroadcast(e.data);
+                } catch (e) {
+                    this.broadcast = { postMessage: function() {}, close: function() {} };
+                }
+                this.bindInput();
+                if (!this.data.user) {
+                    this.openModal('setup');
+                    return;
+                }
+                this.refreshUserBar();
+                this.renderChannels();
+                this.bootstrapRealtime();
+                if (this.activeChannelId) {
+                    const ch = this.data.channels.find(c => c.id === this.activeChannelId);
+                    if (ch) this.selectChannel(ch.id);
+                    else this.showHome();
+                } else if (this.data.channels.length) {
+                    this.selectChannel(this.data.channels[0].id);
+                } else {
+                    this.showHome();
+                }
+                if (!this._welcomedOnline) {
+                    this._welcomedOnline = true;
+                    this.registerProfile(true);
+                }
+                this.initialized = true;
+            },
+
+            ensureDataShape() {
+                if (!this.data.profiles) this.data.profiles = {};
+                if (!this.data.friends) this.data.friends = [];
+                if (!this.data.channels) this.data.channels = [];
+            },
+
+            bootstrapRealtime() {
+                if (!this.data.user) return;
+                this.presenceCache[this.data.user.tag] = Date.now();
+                this.registerProfile(false);
+                this.subscribeInbox();
+                this.startProfileHeartbeat();
+                this.startPresencePoll();
+            },
+
+            markPresence(tag, ts) {
+                if (!tag) return;
+                this.presenceCache[tag] = ts || Date.now();
+            },
+
+            isOnline(tag) {
+                if (!tag) return false;
+                if (tag === this.data.user?.tag) return true;
+                const ts = this.presenceCache[tag];
+                return ts && (Date.now() - ts) < this.PRESENCE_TTL_MS;
+            },
+
+            async refreshFriendPresence(friendTag) {
+                const topic = this.profileTopic(friendTag);
+                const tagSlug = this.tagSlug(friendTag);
+                const urls = [
+                    this.NTFY + '/' + topic + '/json?since=24h',
+                    this.NTFY + '/' + this.DIRECTORY_TOPIC + '/json?since=24h&tags=' + encodeURIComponent(tagSlug)
+                ];
+                for (const url of urls) {
+                    try {
+                        const arr = await this.ntfyFetchJsonArray(url);
+                        let items = arr;
+                        if (url.includes(this.DIRECTORY_TOPIC)) {
+                            items = arr.filter((item) => {
+                                const p = this.parseProfileMessage(item.message);
+                                return p && this.tagSlug(p.tag) === tagSlug;
+                            });
+                        }
+                        const p = this.profileFromMessages(items);
+                        if (p && p.ts) {
+                            this.markPresence(friendTag, p.ts);
+                            this.data.profiles[friendTag] = Object.assign(
+                                {},
+                                this.profileFromTag(friendTag),
+                                this.data.profiles[friendTag] || {},
+                                p
+                            );
+                            return;
+                        }
+                    } catch (e) {}
+                }
+            },
+
+            startPresencePoll() {
+                if (this.presenceTimer) clearInterval(this.presenceTimer);
+                const tick = async () => {
+                    if (!this.data.user) return;
+                    for (const tag of this.data.friends) {
+                        await this.refreshFriendPresence(tag);
+                    }
+                    if (this.activeChannelId) {
+                        const ch = this.data.channels.find(c => c.id === this.activeChannelId);
+                        if (ch) this.renderMembers(ch);
+                    }
+                    this.renderChannels();
+                };
+                tick();
+                this.presenceTimer = setInterval(tick, 12000);
+            },
+
+            stopPresencePoll() {
+                if (this.presenceTimer) {
+                    clearInterval(this.presenceTimer);
+                    this.presenceTimer = null;
+                }
+            },
+
+            startProfileHeartbeat() {
+                if (this.profileHeartbeat) clearInterval(this.profileHeartbeat);
+                this.profileHeartbeat = setInterval(() => this.registerProfile(false), 20000);
+            },
+
+            stopProfileHeartbeat() {
+                if (this.profileHeartbeat) {
+                    clearInterval(this.profileHeartbeat);
+                    this.profileHeartbeat = null;
+                }
+            },
+
+            load() {
+                try {
+                    const raw = localStorage.getItem(this.STORAGE_KEY);
+                    this.data = raw ? JSON.parse(raw) : null;
+                } catch (e) {
+                    this.data = null;
+                }
+                if (!this.data) {
+                    this.data = { user: null, friends: [], channels: [], profiles: {} };
+                }
+                this.ensureDataShape();
+                if (this.data.user) {
+                    this.data.channels.forEach(c => {
+                        if (!c.topic && c.members && c.members.length >= 2 && c.type === 'dm') {
+                            c.topic = this.dmTopic(c.members[0], c.members[1]);
+                        } else if (!c.topic && c.type === 'gc' && c.id) {
+                            c.topic = this.gcTopic(c.id);
+                        }
+                        if (!c.messages) c.messages = [];
+                    });
+                }
+            },
+
+            save() {
+                localStorage.setItem(this.STORAGE_KEY, JSON.stringify(this.data));
+            },
+
+            bindInput() {
+                const input = document.getElementById('vc-message-input');
+                const messages = document.getElementById('vc-messages');
+                const win = document.getElementById('vistacord-window');
+                if (!input || input.dataset.bound) return;
+                input.dataset.bound = '1';
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        this.sendMessage();
+                        return;
+                    }
+                });
+                input.addEventListener('focus', () => {
+                    if (win && !win.classList.contains('maximized')) {
+                        win.style.height = '620px';
+                        win.style.minHeight = '620px';
+                        win.style.maxHeight = '620px';
+                    }
+                });
+            },
+
+            tagSlug(tag) {
+                return tag.replace(/#/g, '-').replace(/[^a-zA-Z0-9_-]/g, '').toLowerCase();
+            },
+
+            makeTag(username, disc) {
+                return username + '#' + disc;
+            },
+
+            parseTag(input) {
+                const m = (input || '').trim().match(/^(.+?)#(\d{4})$/);
+                if (!m) return null;
+                return { username: m[1], disc: m[2], tag: m[1] + '#' + m[2] };
+            },
+
+            avatarColor(seed) {
+                let h = 0;
+                for (let i = 0; i < seed.length; i++) h = seed.charCodeAt(i) + ((h << 5) - h);
+                return this.AVATAR_COLORS[Math.abs(h) % this.AVATAR_COLORS.length];
+            },
+
+            initials(name) {
+                return (name || '?').split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase();
+            },
+
+            dmTopic(tagA, tagB) {
+                const sorted = [tagA, tagB].sort();
+                return 'vistacord-dm-' + this.tagSlug(sorted.join('-'));
+            },
+
+            gcTopic(channelId) {
+                return 'vistacord-gc-' + channelId;
+            },
+
+            profileTopic(tag) {
+                return 'vistacord-user-' + this.tagSlug(tag);
+            },
+
+            inboxTopic(tag) {
+                return 'vistacord-inbox-' + this.tagSlug(tag);
+            },
+
+            async pushInbox(targetTag, payload) {
+                const body = JSON.stringify(payload);
+                const headers = { 'Content-Type': 'application/json' };
+                const topic = this.inboxTopic(targetTag);
+                if (await this.ntfyPost(topic, headers, body)) return;
+                this.ntfyPublishViaGet(topic, body, 'VistaCord');
+            },
+
+            subscribeInbox() {
+                if (!this.data.user) return;
+                const topic = this.inboxTopic(this.data.user.tag);
+                this.startInboxPoll(topic);
+                if (this.eventSources.__inbox) return;
+                const es = new EventSource(this.NTFY + '/' + topic + '/json?since=24h');
+                es.onmessage = (ev) => {
+                    try {
+                        const data = JSON.parse(ev.data);
+                        this.ingestInboxPayload(data);
+                    } catch (e) {}
+                };
+                es.onerror = function() {};
+                this.eventSources.__inbox = es;
+            },
+
+            ingestInboxPayload(data) {
+                const raw = data.message != null ? data.message : data.body;
+                let payload = null;
+                if (typeof raw === 'string') {
+                    try {
+                        payload = JSON.parse(raw);
+                    } catch (e) {
+                        if (raw.includes('"type"') && raw.includes('dm-open')) return;
+                        return;
+                    }
+                } else if (typeof raw === 'object' && raw !== null) {
+                    payload = raw;
+                }
+                if (payload) this.handleInbox(payload);
+            },
+
+            startInboxPoll(topic) {
+                const key = '__inboxpoll';
+                if (this.pollTimers[key]) clearInterval(this.pollTimers[key]);
+                const poll = async () => {
+                    try {
+                        const since = this.lastNtfyIds['__inbox_' + topic] || '';
+                        const url = since
+                            ? this.NTFY + '/' + topic + '/json?since=' + encodeURIComponent(String(since))
+                            : this.NTFY + '/' + topic + '/json?since=24h';
+                        const arr = await this.ntfyFetchJsonArray(url);
+                        for (const row of arr) {
+                            if (row.id) this.lastNtfyIds['__inbox_' + topic] = row.id;
+                            this.ingestInboxPayload(row);
+                        }
+                    } catch (e) {}
+                };
+                poll();
+                this.pollTimers[key] = setInterval(poll, 3500);
+            },
+
+            handleInbox(payload) {
+                if (!payload || !payload.type) return;
+                if (!this._inboxSeen) this._inboxSeen = new Set();
+                const inboxKey = payload.type + '|' + (payload.fromTag || '') + '|' + (payload.channel && payload.channel.id ? payload.channel.id : '');
+                if (this._inboxSeen.has(inboxKey)) return;
+                this._inboxSeen.add(inboxKey);
+
+                if (payload.type === 'dm-open') {
+                    this.data.profiles[payload.fromTag] = payload.profile;
+                    if (!this.data.friends.includes(payload.fromTag)) {
+                        this.data.friends.push(payload.fromTag);
+                    }
+                    this.ensureDmChannel(payload.fromTag);
+                    this.save();
+                    this.renderChannels();
+                    this.toast(payload.fromTag + ' added you');
+                }
+                if (payload.type === 'gc-invite' && payload.channel) {
+                    const invited = JSON.parse(JSON.stringify(payload.channel));
+                    const exists = this.data.channels.find(c => c.id === invited.id);
+                    if (!exists) {
+                        this.data.channels.unshift(invited);
+                        invited.members.forEach(t => {
+                            if (t !== this.data.user.tag && !this.data.friends.includes(t)) {
+                                this.data.friends.push(t);
+                            }
+                        });
+                        this.save();
+                        this.renderChannels();
+                        this.toast('Invited to group: ' + invited.name);
+                    }
+                }
+            },
+
+            profilePayload() {
+                return {
+                    tag: this.data.user.tag,
+                    username: this.data.user.username,
+                    disc: this.data.user.disc,
+                    color: this.data.user.color,
+                    ts: Date.now()
+                };
+            },
+
+            async registerProfile(showToast) {
+                if (!this.data.user) return false;
+                const payload = JSON.stringify(this.profilePayload());
+                const slug = this.tagSlug(this.data.user.tag);
+                const headers = {
+                    'Content-Type': 'text/plain',
+                    'Tags': 'profile,' + slug
+                };
+                let ok = false;
+                this.markPresence(this.data.user.tag, Date.now());
+                ok = await this.ntfyPost(this.profileTopic(this.data.user.tag), headers, payload) || ok;
+                await this.ntfyPost(this.DIRECTORY_TOPIC, headers, payload);
+                if (showToast && ok) this.toast('Profile is online — friends can add you now');
+                if (showToast && !ok) {
+                    this.ntfyPublishViaGet(this.profileTopic(this.data.user.tag), payload, this.data.user.username);
+                    this.ntfyPublishViaGet(this.DIRECTORY_TOPIC, payload, this.data.user.username);
+                    this.toast('Profile ping sent (file mode)');
+                }
+                return ok;
+            },
+
+            parseProfileMessage(raw) {
+                if (!raw) return null;
+                try {
+                    const p = typeof raw === 'string' ? JSON.parse(raw) : raw;
+                    if (p && p.tag && p.username) return p;
+                } catch (e) {}
+                return null;
+            },
+
+            profileFromMessages(items) {
+                if (!items || !items.length) return null;
+                let best = null;
+                for (const item of items) {
+                    const p = this.parseProfileMessage(item.message);
+                    if (p && (!best || (p.ts || 0) > (best.ts || 0))) best = p;
+                }
+                return best;
+            },
+
+            lookupProfileViaFetch(topic, tagSlug) {
+                const urls = [
+                    this.NTFY + '/' + topic + '/json?since=30d',
+                    this.NTFY + '/' + this.DIRECTORY_TOPIC + '/json?since=30d&tags=' + encodeURIComponent(tagSlug)
+                ];
+                return Promise.all(urls.map(async (url, idx) => {
+                    try {
+                        const arr = await this.ntfyFetchJsonArray(url);
+                        if (idx === 1) {
+                            const filtered = arr.filter((item) => {
+                                const p = this.parseProfileMessage(item.message);
+                                return p && this.tagSlug(p.tag) === tagSlug;
+                            });
+                            return this.profileFromMessages(filtered);
+                        }
+                        return this.profileFromMessages(arr);
+                    } catch (e) {
+                        return null;
+                    }
+                })).then(results => results.find(Boolean) || null);
+            },
+
+            lookupProfileViaEventSource(topic, tagSlug) {
+                return new Promise((resolve) => {
+                    let profile = null;
+                    let settled = false;
+                    const finish = (result) => {
+                        if (settled) return;
+                        settled = true;
+                        clearTimeout(timer);
+                        try { es1.close(); } catch (e) {}
+                        try { es2.close(); } catch (e) {}
+                        resolve(result || profile);
+                    };
+                    const timer = setTimeout(() => finish(profile), 5000);
+
+                    const onMsg = (ev) => {
+                        try {
+                            const data = JSON.parse(ev.data);
+                            const p = this.parseProfileMessage(data.message);
+                            if (p && p.tag && this.tagSlug(p.tag) === tagSlug) {
+                                finish(p);
+                            } else if (p) {
+                                profile = p;
+                            }
+                        } catch (e) {}
+                    };
+
+                    const es1 = new EventSource(this.NTFY + '/' + topic + '/json?since=30d');
+                    es1.onmessage = onMsg;
+                    es1.onerror = () => finish(profile);
+
+                    const es2 = new EventSource(
+                        this.NTFY + '/' + this.DIRECTORY_TOPIC + '/json?since=30d&tags=' + encodeURIComponent(tagSlug)
+                    );
+                    es2.onmessage = onMsg;
+                    es2.onerror = () => {};
+                });
+            },
+
+            async lookupProfile(tag) {
+                const tagSlug = this.tagSlug(tag);
+                const topic = this.profileTopic(tag);
+
+                let profile = await this.lookupProfileViaFetch(topic, tagSlug);
+                if (profile) return profile;
+
+                profile = await this.lookupProfileViaEventSource(topic, tagSlug);
+                if (profile) return profile;
+
+                return null;
+            },
+
+            profileFromTag(tag) {
+                const parsed = this.parseTag(tag);
+                if (!parsed) return null;
+                return {
+                    tag: parsed.tag,
+                    username: parsed.username,
+                    disc: parsed.disc,
+                    color: this.avatarColor(parsed.username),
+                    ts: Date.now()
+                };
+            },
+
+            completeSetup() {
+                const raw = document.getElementById('vc-setup-username').value.trim().replace(/#/g, '');
+                if (raw.length < 2) {
+                    this.toast('Username must be at least 2 characters');
+                    return;
+                }
+                const disc = String(Math.floor(1000 + Math.random() * 9000));
+                const user = {
+                    username: raw,
+                    disc,
+                    tag: this.makeTag(raw, disc),
+                    color: this.avatarColor(raw)
+                };
+                this.data.user = user;
+                this.save();
+                this.closeModal('setup');
+                this.refreshUserBar();
+                this.bootstrapRealtime();
+                this.registerProfile(true);
+                this.renderChannels();
+                this.showHome();
+                this.toast('Welcome! Your tag is ' + user.tag + ' — share it so friends can add you');
+            },
+
+            refreshUserBar() {
+                const u = this.data.user;
+                if (!u) return;
+                document.getElementById('vc-my-name').textContent = u.username;
+                document.getElementById('vc-my-tag').textContent = '#' + u.disc;
+                const av = document.getElementById('vc-my-avatar');
+                av.textContent = this.initials(u.username);
+                av.style.background = u.color;
+            },
+
+            async addFriend() {
+                const parsed = this.parseTag(document.getElementById('vc-add-friend-tag').value);
+                if (!parsed) {
+                    this.toast('Use format: Username#1234');
+                    return;
+                }
+                if (parsed.tag === this.data.user.tag) {
+                    this.toast('You cannot add yourself');
+                    return;
+                }
+                if (this.data.friends.includes(parsed.tag)) {
+                    this.toast('Already friends');
+                    return;
+                }
+                this.toast('Looking up ' + parsed.tag + '...');
+                let profile = await this.lookupProfile(parsed.tag);
+                if (!profile) {
+                    profile = this.profileFromTag(parsed.tag);
+                    this.toast('Could not verify online — adding anyway. They need VistaCord open to chat.');
+                }
+                this.data.profiles[parsed.tag] = profile;
+                if (profile && profile.ts) this.markPresence(parsed.tag, profile.ts);
+                this.data.friends.push(parsed.tag);
+                this.save();
+                this.ensureDmChannel(parsed.tag);
+                this.refreshFriendPresence(parsed.tag);
+                await this.pushInbox(parsed.tag, {
+                    type: 'dm-open',
+                    fromTag: this.data.user.tag,
+                    profile: {
+                        tag: this.data.user.tag,
+                        username: this.data.user.username,
+                        disc: this.data.user.disc,
+                        color: this.data.user.color
+                    }
+                });
+                this.renderChannels();
+                this.closeModal('add-friend');
+                document.getElementById('vc-add-friend-tag').value = '';
+                this.toast('Added ' + parsed.tag);
+            },
+
+            ensureDmChannel(friendTag) {
+                const existing = this.data.channels.find(c => c.type === 'dm' && c.members.includes(friendTag));
+                if (existing) return existing;
+                const profile = this.data.profiles[friendTag] || { username: friendTag.split('#')[0] };
+                const channel = {
+                    id: 'dm_' + this.tagSlug([this.data.user.tag, friendTag].sort().join('_')),
+                    type: 'dm',
+                    name: profile.username || friendTag,
+                    members: [this.data.user.tag, friendTag],
+                    topic: this.dmTopic(this.data.user.tag, friendTag),
+                    messages: [],
+                    unread: false
+                };
+                this.data.channels.unshift(channel);
+                this.save();
+                return channel;
+            },
+
+            openModal(name) {
+                const el = document.getElementById('vc-modal-' + name);
+                if (el) el.classList.add('open');
+                if (name === 'create-gc') this.renderGcFriendPick();
+            },
+
+            closeModal(name) {
+                document.getElementById('vc-modal-' + name).classList.remove('open');
+            },
+
+            renderGcFriendPick() {
+                const box = document.getElementById('vc-gc-friend-pick');
+                if (!this.data.friends.length) {
+                    box.innerHTML = '<div style="padding:12px;color:#949ba4;font-size:13px;">Add friends first.</div>';
+                    return;
+                }
+                box.innerHTML = this.data.friends.map(tag => {
+                    const p = this.data.profiles[tag] || { username: tag.split('#')[0] };
+                    return `<label><input type="checkbox" value="${tag}"> ${p.username} (${tag})</label>`;
+                }).join('');
+            },
+
+            createGroup() {
+                const name = document.getElementById('vc-gc-name').value.trim();
+                if (!name) {
+                    this.toast('Enter a group name');
+                    return;
+                }
+                const picks = [...document.querySelectorAll('#vc-gc-friend-pick input:checked')].map(el => el.value);
+                if (!picks.length) {
+                    this.toast('Select at least one friend');
+                    return;
+                }
+                const id = 'gc_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+                const members = [this.data.user.tag, ...picks];
+                const channel = {
+                    id,
+                    type: 'gc',
+                    name,
+                    members,
+                    topic: this.gcTopic(id),
+                    messages: [],
+                    unread: false
+                };
+                this.data.channels.unshift(channel);
+                this.save();
+                picks.forEach(tag => {
+                    this.pushInbox(tag, { type: 'gc-invite', channel });
+                });
+                this.renderChannels();
+                this.selectChannel(id);
+                this.closeModal('create-gc');
+                document.getElementById('vc-gc-name').value = '';
+                this.toast('Group created — friends will see it when VistaCord is open');
+            },
+
+            renderChannels() {
+                const list = document.getElementById('vc-channel-list');
+                const dms = this.data.channels.filter(c => c.type === 'dm');
+                const gcs = this.data.channels.filter(c => c.type === 'gc');
+                let html = '<div class="vc-section-label">Direct Messages</div>';
+                if (!dms.length) {
+                    html += '<div style="padding:8px 12px;font-size:12px;color:#949ba4;">No DMs yet</div>';
+                } else {
+                    html += dms.map(c => this.channelItemHtml(c)).join('');
+                }
+                html += '<div class="vc-section-label">Group Chats</div>';
+                if (!gcs.length) {
+                    html += '<div style="padding:8px 12px;font-size:12px;color:#949ba4;">No groups yet</div>';
+                } else {
+                    html += gcs.map(c => this.channelItemHtml(c)).join('');
+                }
+                list.innerHTML = html;
+            },
+
+            channelItemHtml(c) {
+                const active = c.id === this.activeChannelId ? ' active' : '';
+                const unread = c.unread ? '<span class="vc-unread"></span>' : '';
+                const prefix = c.type === 'gc' ? '<span class="vc-hash">#</span>' : '';
+                let onlinePip = '';
+                if (c.type === 'dm') {
+                    const friendTag = c.members.find(t => t !== this.data.user.tag);
+                    if (friendTag && this.isOnline(friendTag)) onlinePip = '<span class="vc-online-pip" title="Online"></span>';
+                }
+                const safeId = c.id.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+                return '<div class="vc-channel-item' + active + '" onclick="VistaCord.selectChannel(\'' + safeId + '\')">' + prefix +
+                    '<span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + this.escapeHtml(c.name) + '</span>' +
+                    unread + onlinePip + '</div>';
+            },
+
+            selectChannel(id) {
+                this.disconnectAll(false);
+                this.activeChannelId = id;
+                const channel = this.data.channels.find(c => c.id === id);
+                if (!channel) return;
+                channel.messages.forEach(m => { if (m.id) this.messageIds.add(m.id); });
+                channel.unread = false;
+                this.save();
+                document.getElementById('vc-welcome').style.display = 'none';
+                document.getElementById('vc-input-wrap').style.display = 'block';
+                document.getElementById('vc-chat-head').innerHTML = (channel.type === 'gc' ? '<span class="vc-hash">#</span>' : '') +
+                    '<span>' + this.escapeHtml(channel.name) + '</span>';
+                document.getElementById('vc-members-panel').classList.toggle('visible', channel.type === 'gc' || channel.type === 'dm');
+                this.renderChannels();
+                this.renderMessages(channel);
+                if (channel.type === 'dm') {
+                    const friendTag = channel.members.find(t => t !== this.data.user.tag);
+                    if (friendTag) this.refreshFriendPresence(friendTag).then(() => this.renderMembers(channel));
+                    else this.renderMembers(channel);
+                } else {
+                    this.renderMembers(channel);
+                }
+                this.subscribeChannel(channel);
+                document.getElementById('vc-message-input').focus();
+            },
+
+            showHome() {
+                this.activeChannelId = null;
+                this.save();
+                this.disconnectAll(false);
+                const welcome = document.getElementById('vc-welcome');
+                if (welcome) welcome.style.display = 'flex';
+                const list = document.getElementById('vc-message-list');
+                if (list) list.innerHTML = '';
+                document.getElementById('vc-input-wrap').style.display = 'none';
+                document.getElementById('vc-members-panel').classList.remove('visible');
+                document.getElementById('vc-chat-head').innerHTML = '<span>Welcome</span>';
+                this.pollFailStreak = 0;
+                this.setLiveBadge(true);
+                this.renderChannels();
+            },
+
+            messageListEl() {
+                let list = document.getElementById('vc-message-list');
+                const box = document.getElementById('vc-messages');
+                if (!list && box) {
+                    list = document.createElement('div');
+                    list.id = 'vc-message-list';
+                    box.appendChild(list);
+                }
+                return list;
+            },
+
+            renderMessages(channel) {
+                const welcome = document.getElementById('vc-welcome');
+                if (welcome) welcome.style.display = 'none';
+                const list = this.messageListEl();
+                list.innerHTML = '';
+                channel.messages.forEach(msg => list.appendChild(this.messageNode(msg)));
+                const scrollBox = document.getElementById('vc-messages');
+                if (scrollBox) scrollBox.scrollTop = scrollBox.scrollHeight;
+            },
+
+            renderMembers(channel) {
+                const list = document.getElementById('vc-members-list');
+                list.innerHTML = channel.members.map(tag => {
+                    const p = tag === this.data.user.tag ? this.data.user : (this.data.profiles[tag] || { username: tag.split('#')[0], color: '#5865f2' });
+                    const online = this.isOnline(tag);
+                    return '<div class="vc-member-item' + (online ? ' online' : '') + '">' +
+                        '<div class="vc-avatar" style="background:' + (p.color || '#5865f2') + ';width:28px;height:28px;font-size:11px;">' + this.initials(p.username) + '</div>' +
+                        '<span class="vc-member-name">' + this.escapeHtml(p.username) + '</span>' +
+                        '<span class="vc-member-status">' + (online ? 'Online' : 'Offline') + '</span>' +
+                        '<span class="vc-status-dot"></span></div>';
+                }).join('');
+            },
+
+            messageNode(msg) {
+                const el = document.createElement('div');
+                el.className = 'vc-msg';
+                const color = msg.color || this.avatarColor(msg.from || msg.fromTag);
+                el.innerHTML = `
+                    <div class="vc-msg-avatar" style="background:${color}">${this.initials(msg.username || msg.from)}</div>
+                    <div class="vc-msg-body">
+                        <div class="vc-msg-head">
+                            <span class="vc-msg-author">${this.escapeHtml(msg.username || msg.from)}</span>
+                            <span class="vc-msg-time">${this.formatTime(msg.ts)}</span>
+                        </div>
+                        <div class="vc-msg-text">${this.escapeHtml(msg.text)}</div>
+                    </div>`;
+                return el;
+            },
+
+            formatTime(ts) {
+                const d = new Date(ts);
+                const now = new Date();
+                const sameDay = d.toDateString() === now.toDateString();
+                if (sameDay) {
+                    return d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+                }
+                return d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+            },
+
+            async sendMessage() {
+                const channel = this.data.channels.find(c => c.id === this.activeChannelId);
+                const input = document.getElementById('vc-message-input');
+                const text = input.value.trim();
+                if (!channel || !text) return;
+
+                const msg = {
+                    id: 'm_' + Date.now() + '_' + Math.random().toString(36).slice(2, 9),
+                    from: this.data.user.username,
+                    fromTag: this.data.user.tag,
+                    username: this.data.user.username,
+                    color: this.data.user.color,
+                    text,
+                    ts: Date.now(),
+                    channelId: channel.id
+                };
+
+                input.value = '';
+                this.markPresence(this.data.user.tag, Date.now());
+                this.appendMessage(channel, msg, true);
+                try {
+                    this.broadcast.postMessage({ type: 'msg', channelId: channel.id, msg });
+                } catch (e) {}
+
+                const body = JSON.stringify(msg);
+                const headers = { 'Content-Type': 'text/plain', 'Title': msg.username };
+                let sent = await this.ntfyPost(channel.topic, headers, body);
+                if (!sent) {
+                    this.ntfyPublishViaGet(channel.topic, body, msg.username);
+                }
+            },
+
+            appendMessage(channel, msg, isLocal) {
+                if (!msg || !msg.id) return;
+                const alreadyStored = channel.messages.some(m => m.id === msg.id);
+                if (this.messageIds.has(msg.id) && alreadyStored) return;
+                this.messageIds.add(msg.id);
+                if (!alreadyStored) {
+                    channel.messages.push(msg);
+                    if (channel.messages.length > 200) channel.messages.shift();
+                    this.save();
+                }
+                if (channel.id === this.activeChannelId && !alreadyStored) {
+                    const welcome = document.getElementById('vc-welcome');
+                    if (welcome) welcome.style.display = 'none';
+                    const list = this.messageListEl();
+                    list.appendChild(this.messageNode(msg));
+                    const scrollBox = document.getElementById('vc-messages');
+                    if (scrollBox) scrollBox.scrollTop = scrollBox.scrollHeight;
+                } else if (!isLocal) {
+                    channel.unread = true;
+                    this.save();
+                    this.renderChannels();
+                }
+            },
+
+            parseChatMessageFromNtfy(data) {
+                if (!data) return null;
+                const raw = data.message != null ? data.message : data.body;
+                if (raw == null) return null;
+                if (typeof raw === 'object') {
+                    return raw.id ? raw : null;
+                }
+                if (typeof raw === 'string') {
+                    try {
+                        const msg = JSON.parse(raw);
+                        return msg && msg.id ? msg : null;
+                    } catch (e) {
+                        return null;
+                    }
+                }
+                return null;
+            },
+
+            ingestChatNotification(channelId, data) {
+                const msg = this.parseChatMessageFromNtfy(data);
+                if (!msg) return;
+                this.onRemoteMessage(channelId, msg);
+            },
+
+            startChannelPoll(topic, channelId) {
+                const key = '__poll_' + topic;
+                if (this.pollTimers[key]) clearInterval(this.pollTimers[key]);
+                const storageKey = 'poll_' + topic;
+
+                const poll = async () => {
+                    try {
+                        const since = this.lastNtfyIds[storageKey] || '';
+                        const url = since
+                            ? this.NTFY + '/' + topic + '/json?since=' + encodeURIComponent(String(since))
+                            : this.NTFY + '/' + topic + '/json?since=24h';
+                        const arr = await this.ntfyFetchJsonArray(url);
+                        this.pollFailStreak = 0;
+                        this.setLiveBadge(true);
+                        for (const row of arr) {
+                            if (row.id != null) this.lastNtfyIds[storageKey] = row.id;
+                            this.ingestChatNotification(channelId, row);
+                        }
+                    } catch (e) {
+                        this.pollFailStreak++;
+                        if (this.pollFailStreak >= 5) this.setLiveBadge(false);
+                    }
+                };
+                poll();
+                this.pollTimers[key] = setInterval(poll, 2500);
+            },
+
+            stopChannelPoll(topic) {
+                const key = '__poll_' + topic;
+                if (this.pollTimers[key]) {
+                    clearInterval(this.pollTimers[key]);
+                    delete this.pollTimers[key];
+                }
+            },
+
+            stopAllChannelPolls() {
+                Object.keys(this.pollTimers).forEach(k => {
+                    if (k === '__inboxpoll') return;
+                    clearInterval(this.pollTimers[k]);
+                    delete this.pollTimers[k];
+                });
+            },
+
+            setLiveBadge(ok) {
+                const badge = document.getElementById('vc-live-badge');
+                if (!badge) return;
+                badge.style.background = ok ? '#23a559' : '#f23f43';
+            },
+
+            subscribeChannel(channel) {
+                const topic = channel.topic;
+                this.stopChannelPoll(topic);
+                if (this.eventSources[topic]) {
+                    try { this.eventSources[topic].close(); } catch (e) {}
+                    delete this.eventSources[topic];
+                }
+
+                this.pollFailStreak = 0;
+                this.setLiveBadge(true);
+                this.startChannelPoll(topic, channel.id);
+
+                try {
+                    const es = new EventSource(this.NTFY + '/' + topic + '/json?since=24h');
+                    es.onopen = () => {
+                        this.pollFailStreak = 0;
+                        this.setLiveBadge(true);
+                    };
+                    es.onmessage = (ev) => {
+                        try {
+                            const data = JSON.parse(ev.data);
+                            if (data.id != null) this.lastNtfyIds['poll_' + topic] = data.id;
+                            this.ingestChatNotification(channel.id, data);
+                            this.setLiveBadge(true);
+                        } catch (e) {}
+                    };
+                    es.onerror = function() {};
+                    this.eventSources[topic] = es;
+                } catch (e) {}
+            },
+
+            onRemoteMessage(channelId, msg) {
+                if (msg.fromTag === this.data.user.tag) return;
+                if (msg.fromTag) this.markPresence(msg.fromTag, msg.ts || Date.now());
+                const channel = this.data.channels.find(c => c.id === channelId);
+                if (!channel) return;
+                this.appendMessage(channel, msg, false);
+                if (channel.id === this.activeChannelId) {
+                    this.renderMembers(channel);
+                    this.renderChannels();
+                }
+                try {
+                    this.broadcast.postMessage({ type: 'msg', channelId, msg });
+                } catch (e) {}
+            },
+
+            onBroadcast(data) {
+                if (!data || data.type !== 'msg') return;
+                const channel = this.data.channels.find(c => c.id === data.channelId);
+                if (channel) this.appendMessage(channel, data.msg, data.msg.fromTag === this.data.user?.tag);
+            },
+
+            disconnectAll(full) {
+                if (full) {
+                    if (this.pollTimers.__inboxpoll) {
+                        clearInterval(this.pollTimers.__inboxpoll);
+                        delete this.pollTimers.__inboxpoll;
+                    }
+                } else {
+                    this.stopAllChannelPolls();
+                }
+                Object.keys(this.eventSources).forEach(key => {
+                    if (!full && key === '__inbox') return;
+                    try { this.eventSources[key].close(); } catch (e) {}
+                    delete this.eventSources[key];
+                });
+                if (full) {
+                    this.stopProfileHeartbeat();
+                    this.stopPresencePoll();
+                    Object.keys(this.pollTimers).forEach(k => {
+                        clearInterval(this.pollTimers[k]);
+                        delete this.pollTimers[k];
+                    });
+                }
+            },
+
+            copyMyTag() {
+                if (!this.data.user) return;
+                const tag = this.data.user.tag;
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(tag).then(() => this.toast('Copied ' + tag)).catch(() => this.fallbackCopyTag(tag));
+                } else {
+                    this.fallbackCopyTag(tag);
+                }
+            },
+
+            fallbackCopyTag(tag) {
+                const ta = document.createElement('textarea');
+                ta.value = tag;
+                ta.style.position = 'fixed';
+                ta.style.left = '-9999px';
+                document.body.appendChild(ta);
+                ta.select();
+                try {
+                    document.execCommand('copy');
+                    this.toast('Copied ' + tag);
+                } catch (e) {
+                    this.toast('Your tag: ' + tag);
+                }
+                document.body.removeChild(ta);
+            },
+
+            toast(text) {
+                const el = document.getElementById('vc-toast');
+                el.textContent = text;
+                el.classList.add('show');
+                clearTimeout(this._toastTimer);
+                this._toastTimer = setTimeout(() => el.classList.remove('show'), 2800);
+            },
+
+            escapeHtml(text) {
+                const d = document.createElement('div');
+                d.textContent = text;
+                return d.innerHTML;
+            }
+        };
+
+        // Keyboard support for terminal (basic)
+        document.getElementById('term-input').addEventListener('keydown', function(e) {
+            if (e.key !== 'Enter') return;
+            e.preventDefault();
+            const cmd = this.value.trim();
+            if (!cmd) return;
+            const termView = document.getElementById('term-view');
+            const inputLine = document.querySelector('.terminal-input-line');
+
+            const cmdRow = document.createElement('div');
+            cmdRow.className = 'terminal-log-row';
+            cmdRow.innerHTML = '<span class="terminal-prompt">C:\\&gt;</span> ' + escapeTerminalText(cmd);
+            termView.insertBefore(cmdRow, inputLine);
+
+            const result = runTerminalCommand(cmd);
+            if (result === '__CLEAR__') {
+                termView.querySelectorAll('.terminal-log-row').forEach(row => row.remove());
+            } else if (result) {
+                const outRow = document.createElement('div');
+                outRow.className = 'terminal-log-row';
+                outRow.textContent = result;
+                termView.insertBefore(outRow, inputLine);
+            }
+
+            this.value = '';
+            termView.scrollTop = termView.scrollHeight;
+        });
+    </script>
+</body>
+</html>
